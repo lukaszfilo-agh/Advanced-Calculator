@@ -1,23 +1,46 @@
 import sys
-from PyQt6.QtCore import QSize, Qt
-from PyQt6.QtWidgets import QApplication, QMainWindow, QPushButton
+from PyQt6.QtCore import Qt
+from PyQt6.QtWidgets import (
+    QApplication,
+    QGridLayout,
+    QLineEdit,
+    QMainWindow,
+    QPushButton,
+    QVBoxLayout,
+    QWidget,
+)
 
+WINDOW_WIDTH = 400
+WINDOW_HEIGHT = 600
 
 # Subclass QMainWindow application main window
-class MainWindow(QMainWindow):
+
+
+class CalcMainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        # Name of window
         self.setWindowTitle("Advanced Calculator")
-        self.setGeometry(500, 200, 400, 600)
+
+        # Size of window
+        self.setFixedSize(WINDOW_WIDTH, WINDOW_HEIGHT)
+
+        # Select box layout
+        self.generalLayout = QVBoxLayout()
+
+        # Parent of GUI elements
+        centralWidget = QWidget(self)
+        centralWidget.setLayout(self.generalLayout)
+        self.setCentralWidget(centralWidget)
 
 
 def main():
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
-    sys.exit(app.exec())
-    
-    
+    calcApp = QApplication(sys.argv)
+    MainW = CalcMainWindow()
+    MainW.show()
+    sys.exit(calcApp.exec())
+
+
 if __name__ == "__main__":
     main()
