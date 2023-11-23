@@ -1,4 +1,14 @@
 import sys
+
+import matplotlib
+matplotlib.use('QtAgg')
+
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+
+import numpy as np
+
+from PyQt6 import QtCore, QtWidgets
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QAction
 from PyQt6.QtWidgets import (
@@ -8,9 +18,11 @@ from PyQt6.QtWidgets import (
     QMainWindow,
     QPushButton,
     QVBoxLayout,
+    QHBoxLayout,
     QWidget,
     QToolBar,
-    QStatusBar
+    QStatusBar,
+    QLabel
 )
 
 WINDOW_WIDTH = 400
@@ -68,6 +80,9 @@ class CalcMainWindow(QMainWindow):
         self.setStatusBar(QStatusBar(self))
 
     def draw_plot_window(self):
+        self.plot_window = PlotWindow(self)
+        self.plot_window.show()
+        self.hide()
         print('Plotter opened')
 
     def sample_button_click(self, s):
@@ -76,6 +91,72 @@ class CalcMainWindow(QMainWindow):
     def quit_app(self):
         QApplication.instance().quit
 
+    # Method for centering windows
+    def center(self):
+        qr = self.frameGeometry()
+        cp = self.screen().availableGeometry().center()
+
+        qr.moveCenter(cp)
+        self.move(qr.topLeft())
+
+# Class for plot display
+class MplCanvas(FigureCanvas):
+
+    def __init__(self, parent=None, width=5, height=4, dpi=100):
+        fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = fig.add_subplot(111)
+        super(MplCanvas, self).__init__(fig)
+
+
+class PlotWindow(QWidget):
+    def __init__(self, menu_window):
+        super().__init__()
+        self.parent = menu_window
+        self.setWindowTitle("Plot Window")
+        self.resize(600, 600)
+        self.center()
+
+        self.main_layout = QVBoxLayout()
+
+        self.canvas = MplCanvas(self, width=5, height=4, dpi=100)
+        self.canvas.axes.grid(True)
+        self.main_layout.addWidget(self.canvas)
+
+        bottom_layout = QHBoxLayout()
+
+        data_button = QPushButton("Insert data")
+        data_button.clicked.connect(self.get_data)
+        bottom_layout.addWidget(data_button, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        back_button = QPushButton("Back to Main Window")
+        back_button.clicked.connect(self.back_to_menu)
+        bottom_layout.addWidget(back_button, alignment=Qt.AlignmentFlag.AlignRight)
+
+        self.main_layout.addLayout(bottom_layout)
+        self.setLayout(self.main_layout)
+
+    def back_to_menu(self):
+        self.close()
+        self.parent.show()
+        print('Back to menu')
+
+    def get_data(self):
+        print('Get data for plot')
+        function_str, done1 = QtWidgets.QInputDialog.getText(
+             self, 'Function', 'Enter funcion:')
+        lim1, done2 = QtWidgets.QInputDialog.getInt(
+           self, 'Lower limit', 'Enter lower limit:')
+        lim2, done3 = QtWidgets.QInputDialog.getInt(
+           self, 'Upper limit', 'Enter upper limit:')
+        if done1 and done2 and done3:
+            xvals = np.arange(lim1, lim2, 0.01)
+            fx = lambda x: eval(function_str)
+            yvals = fx(xvals)
+            self.canvas.axes.cla()
+            self.canvas.axes.plot(xvals, yvals)
+            self.canvas.axes.grid(True)
+            self.canvas.draw()
+    
     # Method for centering windows
     def center(self):
         qr = self.frameGeometry()
