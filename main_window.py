@@ -18,7 +18,6 @@ WINDOW_HEIGHT = 600
 
 # Subclass QMainWindow application main window
 
-
 class CalcMainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -28,6 +27,9 @@ class CalcMainWindow(QMainWindow):
 
         # Size of window
         self.setFixedSize(WINDOW_WIDTH, WINDOW_HEIGHT)
+
+        # Center window
+        self.center()
 
         # Select box layout
         self.generalLayout = QVBoxLayout()
@@ -74,6 +76,14 @@ class CalcMainWindow(QMainWindow):
     
     def quitApp(self):
         QApplication.instance().quit
+    
+    # Method for centering windows
+    def center(self):
+        qr = self.frameGeometry()
+        cp = self.screen().availableGeometry().center()
+
+        qr.moveCenter(cp)
+        self.move(qr.topLeft())
 
 def main():
     calcApp = QApplication(sys.argv)
