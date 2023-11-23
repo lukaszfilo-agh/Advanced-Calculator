@@ -17,10 +17,10 @@ WINDOW_WIDTH = 400
 WINDOW_HEIGHT = 600
 
 # Subclass QMainWindow application main window
-
 class CalcMainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
+        self.plot_window = None
 
         # Name of window
         self.setWindowTitle("Advanced Calculator")
@@ -42,14 +42,14 @@ class CalcMainWindow(QMainWindow):
         # Sample button
         sample_button = QAction("&Sample button", self)
         sample_button.setStatusTip("This is Sample button")
-        sample_button.triggered.connect(self.SampleButtonClick)
+        sample_button.triggered.connect(self.sample_button_click)
 
         # Plot calc button
         plot_calc_button = QAction("&Draw plot", self)
         plot_calc_button.setStatusTip("Open plot calc")
-        plot_calc_button.triggered.connect(self.DrawPlotWindow)
+        plot_calc_button.triggered.connect(self.draw_plot_window)
 
-        #Exit Button
+        # Exit Button
         exit_button = QAction("&Quit", self)
         exit_button.setStatusTip("Quit app")
         exit_button.triggered.connect(QApplication.instance().quit)
@@ -67,16 +67,15 @@ class CalcMainWindow(QMainWindow):
         # Create statusbar
         self.setStatusBar(QStatusBar(self))
 
-
-    def DrawPlotWindow(self):
+    def draw_plot_window(self):
         print('Plotter opened')
 
-    def SampleButtonClick(self, s):
+    def sample_button_click(self, s):
         print('button clicked')
-    
-    def quitApp(self):
+
+    def quit_app(self):
         QApplication.instance().quit
-    
+
     # Method for centering windows
     def center(self):
         qr = self.frameGeometry()
@@ -84,6 +83,7 @@ class CalcMainWindow(QMainWindow):
 
         qr.moveCenter(cp)
         self.move(qr.topLeft())
+
 
 def main():
     calcApp = QApplication(sys.argv)
