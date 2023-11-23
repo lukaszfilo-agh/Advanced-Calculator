@@ -1,5 +1,7 @@
 import sys
 
+import re
+
 import matplotlib
 matplotlib.use('QtAgg')
 
@@ -150,6 +152,7 @@ class PlotWindow(QWidget):
            self, 'Upper limit', 'Enter upper limit:')
         if done1 and done2 and done3:
             xvals = np.arange(lim1, lim2, 0.01)
+            function_str = convert_to_math(function_str)
             fx = lambda x: eval(function_str)
             yvals = fx(xvals)
             self.canvas.axes.cla()
@@ -165,6 +168,16 @@ class PlotWindow(QWidget):
         qr.moveCenter(cp)
         self.move(qr.topLeft())
 
+def convert_to_math(zapis):
+    # Zamiana 'x' na '*x'
+    zapis = re.sub(r'(\d)([a-zA-Z])', r'\1*\2', zapis)
+    # Zamiana '^' na '**'
+    zapis = zapis.replace('^', '**')
+    # Dodanie znaku mnożenia w przypadku 'x(' lub ')x'
+    zapis = re.sub(r'([a-zA-Z])(\()', r'\1*\2', zapis)
+    zapis = re.sub(r'(\))([a-zA-Z])', r'\1*\2', zapis)
+
+    return zapis
 
 def main():
     calcApp = QApplication(sys.argv)
