@@ -30,9 +30,6 @@ class CalcMainWindow(QMainWindow):
         # Display widget:
         self.__display_field: Optional[QWidget] = None
 
-        # Operations widget:
-        self.__operations_field: Optional[QWidget] = None
-
         # Str val of display:
         self.__str_val = ""
 
@@ -56,10 +53,7 @@ class CalcMainWindow(QMainWindow):
         # Label for results display:
         self.__display_field = QLabel("0")
 
-        # Label for displaying operations:
-        self.__operations_field = QLabel("")
-
-        # Helper to get buttons layout:
+        # Helper to get buttons layout and connect them to action management function:
         def get_buttons_layout() -> QVBoxLayout:
 
             # Create layouts:
@@ -164,9 +158,6 @@ class CalcMainWindow(QMainWindow):
         font.setPointSize(45)
         self.__display_field.setFont(font)
 
-        font.setPointSize(8)
-        self.__operations_field.setFont(font)
-
         # White:
         #field.setStyleSheet("color: #FFFFFF")
         # Black:
@@ -201,7 +192,6 @@ class CalcMainWindow(QMainWindow):
         create_sample_buttons()
 
         # Setting up final layout:
-        field_layout.addWidget(self.__operations_field, alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom)
         field_layout.addWidget(self.__display_field, alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom)
         final_layout.addLayout(field_layout)
         final_layout.addLayout(buttons_layout)
@@ -217,75 +207,103 @@ class CalcMainWindow(QMainWindow):
         # Create statusbar:
         self.setStatusBar(QStatusBar(self))
 
+    def __terminate_too_many_digits_after_dot(self, num: float) -> float:
+
+        # Digit limit of our display:
+        n = 13
+
+        # If number of digits exceeds display limit:
+        if len(str(num)) >= n:
+            # Index of dot point:
+            idx_dot_point = str(num).index(".")
+
+            # Rounding to max possible digits:
+            rounding_to = n - idx_dot_point - 1
+
+            return round(num, rounding_to)
+        return num
+
     # Function to manage clicks:
     def __manage_clicks(self) -> None:
         # Get a button which is a sender of this information:
         sender = self.sender()
 
-        # Delete text - set to 0: - WORKS
+        # Delete text - set display to 0: - WORKS
         if sender.text() in ["C", "CE"]:
             self.__str_val = ""
             self.__display_field.setText("0")
-            self.__operations_field = ""
         # Remove digits: - WORKS
         elif sender.text() == "<-":
-            # if we can go back - there is something to delete and there is no special sign:
+            # if there is something to delete and there is no special sign at the end (we can't delete it):
             if len(self.__str_val) > 0 and self.__str_val[-1] not in ["/", "x", "-", "+"]:
-                self.__str_val = str(eval(self.__str_val) // 10)
-                # if we get zeros we simply display 0 and reset our counter:
-                if self.__str_val in ["0", "0.0"]:
-                    self.__display_field.setText("0")
-                    self.__str_val = ""
-                # Otherwise we count normally:
+                eval_str = eval(self.__str_val)
+                # If we have a dot point:
+                if isinstance(eval_str, float):
+                    # We simply override our string by removing the last char:
+                    self.__str_val = self.__str_val[:-1]
+                    # If we are at a situation that there's only dot point left, with nothing after it,
+                    # we override again:
+                    if self.__str_val[-1] == ".":
+                        self.__str_val = self.__str_val[:-1]
+                # If we have int, we can just divide using "//" to get rid of the last digit:
                 else:
-                    self.__display_field.setText(self.__str_val)
-
-        # Evaluate:
+                    self.__str_val = str(eval(self.__str_val) // 10)
+                # Update display:
+                self.__display_field.setText(self.__str_val)
+                # If we got to plain zero we reset our str_val and start over:
+                if self.__str_val == "0":
+                    self.__str_val = ""
+        # Evaluating expressions:
         elif sender.text() == "=":
             # if something was entered - it's not the basic 0 in the display:
             if self.__str_val != "":
                 try:
-                    # We evaluate the str_val:
-                    print(self.__str_val)
-                    count_val = eval(self.__str_val)
-                    print(count_val)
-                    # We check if there was a division and rest i 0, then we omit it:
-                    if isinstance(count_val, float) and abs(count_val) > 1 and count_val % int(count_val) == 0.0:
-                        count_val = int(count_val)
-                    # We keep the value for later calculations:
-                    self.__str_val = f"{count_val}"
-                    print(self.__str_val)
-                    # We display the result:
+                    # Evaluate the expression:
+                    eval_str = eval(self.__str_val)
+                    # if we have float, get rid of too many zeros:
+                    if isinstance(eval_str, float):
+                        eval_str = self.__terminate_too_many_digits_after_dot(eval_str)
+                    self.__str_val = str(eval_str)
                     self.__display_field.setText(self.__str_val)
-                # In case of division by zero:
                 except ZeroDivisionError:
                     self.__display_field.setText("Err")
                     self.__str_val = ""
-        else:
-            # Check for max display length:
+        # Digits in sender:
+        elif sender.text() in [str(i) for i in range(0, 10)]:
+            # Check for max display length - don't allow to add more digits if we don't have more space:
             if len(self.__display_field.text()) < 13:
-                # Adding digits: - WORKS
-                if sender.text() in [str(i) for i in range(0, 10)]:
-                    if sender.text() != "0" or (sender.text() == "0" and self.__display_field.text()[0] != "0"):
-                        self.__str_val += sender.text()
-                        self.__display_field.setText(self.__str_val)
-                elif sender.text() in ["/", "x", "-", "+"]:
-                    if 12 > len(self.__str_val) > 0 and self.__str_val[-1] not in ["/", "*", "-", "+"]:
-                        if sender.text() == "x":
-                            self.__str_val += "*"
-                        else:
-                            self.__str_val += sender.text()
-                        self.__display_field.setText(self.__str_val)
-            # We have overloaded the display:
-            # else:
-            #     if sender.text() in ["/", "x", "-", "+"]:
-            #         if self.__str_val[-1] not in ["/", "*", "-", "+"]:
-            #             if sender.text() == "x":
-            #                 self.__str_val += "*"
-            #             else:
-            #                 self.__str_val += sender.text()
-                # elif sender.text() in [str(i) for i in range(0, 10)]:
-                #     self.__str_val += sender.text()
+                # If there is no 0 already (something was added) or
+                # we have a zero, but it's not on the beginning, or it's on the beginning, but we have a dot point:
+                if sender.text() != "0" or \
+                        (sender.text() == "0" and (self.__display_field.text()[0] != "0" or "." in self.__str_val)):
+                    self.__str_val += sender.text()
+                    self.__display_field.setText(self.__str_val)
+        # Binary operators in sender:
+        elif sender.text() in ["/", "x", "-", "+"]:
+            # We don't allow situations to begin with the operator nd stack them on top of each-other:
+            if 12 > len(self.__str_val) > 0 and self.__str_val[-1] not in ["/", "*", "-", "+"]:
+                # if there already is an operator with 2 operands to be evaluated:
+                if any(sign in self.__str_val for sign in ["/", "*", "-", "+"]):
+                    # if we divide by 0 through eval we have to restart with error:
+                    try:
+                        eval_str = eval(self.__str_val)
+                        if isinstance(eval_str, float):
+                            eval_str = self.__terminate_too_many_digits_after_dot(eval_str)
+                        self.__str_val = str(eval_str)
+                    except ZeroDivisionError:
+                        self.__display_field.setText("Err")
+                        self.__str_val = ""
+                        return
+                # If there's an x we have to swap it for python mul operator to be able to evaluate:
+                if sender.text() == "x":
+                    self.__str_val += "*"
+                else:
+                    self.__str_val += sender.text()
+                # We set the displayed text:
+                self.__display_field.setText(self.__str_val)
+            # Overridden display field - add helper label:
+            elif len(self.__str_val) > 12 and self.__str_val[-1] not in ["/", "*", "-", "+"]:
+                pass
 
     def draw_plot_window(self):
         print('Plotter opened')
@@ -306,10 +324,10 @@ class CalcMainWindow(QMainWindow):
 
 
 def main():
-    calcApp = QApplication(sys.argv)
-    MainW = CalcMainWindow()
-    MainW.show()
-    sys.exit(calcApp.exec())
+    calc_app = QApplication(sys.argv)
+    main_w = CalcMainWindow()
+    main_w.show()
+    sys.exit(calc_app.exec())
 
 
 if __name__ == "__main__":
