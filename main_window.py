@@ -243,6 +243,36 @@ class CalcMainWindow(QMainWindow):
     def __change_format_for_large_nums(self, num: Union[int, float]) -> str:
         return "{:e}".format(num)
 
+    # Helper function to get e format:
+    def __get_e_format(self, num: float) -> str:
+        e_format = ""
+
+        # Fixing overflow after evaluation, we block immediate e format application to small numbers:
+        if len(str(num)) >= 13 and abs(num) > 1:
+
+            e_format = self.__change_format_for_large_nums(num)
+
+            # if we take too much display space with e format:
+            if len(e_format) >= 13:
+                # We get the position of e - beginning of our format:
+                e_ind = e_format.index("e")
+
+                # Block situation of appearing e+00 - round with no e:
+                if e_format[e_ind + 1] == "0":
+                    e_format = self.__terminate_too_many_digits_after_dot(float(e_format))
+                # Else if there is something different then 0 after e:
+                else:
+                    # We separate number for e:
+                    num = e_format[:e_ind]
+                    e = e_format[e_ind:]
+
+                    # We round accordingly:
+                    num = self.__terminate_too_many_digits_after_dot(num, e)
+
+                    # We connect rounded number with format:
+                    e_format = num + e
+        return e_format
+
     # Function to manage clicks:
     def __manage_clicks(self) -> None:
         # Get a button which is a sender of this information:
@@ -346,11 +376,12 @@ class CalcMainWindow(QMainWindow):
                 if self.__str_val == "":
                     # if there's no e format:
                     if "e" not in self.__operations_field.text():
-                        # We swap binary operators:
-                        self.__str_val_operations = self.__str_val_operations[:-1] + bin_op
                         self.__operations_field.setText(self.__str_val_operations)
                     else:
+                        # We swap text from operations field:
                         self.__operations_field.setText(self.__operations_field.text()[:-1] + bin_op)
+                    # We swap binary operators from str_val_operations:
+                    self.__str_val_operations = self.__str_val_operations[:-1] + bin_op
                 # Else - we can evaluate:
                 else:
                     # Trying for 0 division error:
@@ -359,37 +390,12 @@ class CalcMainWindow(QMainWindow):
                         self.__str_val_operations += self.__str_val
                         eval_str = eval(self.__str_val_operations)
 
-                        # We'll keep the e format information in case there is one:
-                        e_format = ""
-
                         # if we have floating point, get rid of too many digits after dot point:
                         if isinstance(eval_str, float) and len(str(eval_str)) >= 13:
                             eval_str = self.__terminate_too_many_digits_after_dot(eval_str)
 
-                        # Fixing overflow after evaluation, we block immediate e format application to small numbers:
-                        if len(str(eval_str)) >= 13 and abs(eval_str) > 1:
-
-                            e_format = self.__change_format_for_large_nums(eval_str)
-
-                            # if we take too much display space with e format:
-                            if len(e_format) >= 13:
-                                # We get the position of e - beginning of our format:
-                                e_ind = e_format.index("e")
-
-                                # Block situation of appearing e+00 - round with no e:
-                                if e_format[e_ind + 1] == "0":
-                                    e_format = self.__terminate_too_many_digits_after_dot(float(e_format))
-                                # Else if there is something different then 0 after e:
-                                else:
-                                    # We separate number for e:
-                                    num = e_format[:e_ind]
-                                    e = e_format[e_ind:]
-
-                                    # We round accordingly:
-                                    num = self.__terminate_too_many_digits_after_dot(num, e)
-
-                                    # We connect rounded number with format:
-                                    e_format = num + e
+                        # We'll keep the e format information in case there is one:
+                        e_format = self.__get_e_format(eval_str)
 
                         # We keep evaluated value in str_val for further operations:
                         self.__str_val = str(eval_str)
