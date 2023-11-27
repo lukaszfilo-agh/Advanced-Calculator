@@ -16,7 +16,11 @@ from PyQt6.QtCore import Qt, QSize
 from PyQt6 import QtCore, QtWidgets
 import numpy as np
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas, NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qtagg import (
+    FigureCanvasQTAgg as FigureCanvas, 
+    NavigationToolbar2QT as NavigationToolbar
+
+)
 import sys
 
 import re
@@ -175,17 +179,20 @@ class PlotWindow(QWidget):
         lim2, done3 = QtWidgets.QInputDialog.getInt(
             self, 'Upper limit', 'Enter upper limit:')
         if done1 and done2 and done3:
-            xvals = np.arange(lim1, lim2, 0.01)
-            function_str_math = convert_to_math(function_str)
-            def fx(x): return eval(function_str_math)
-            yvals = fx(xvals)
-            self.canvas.axes.cla()
-            self.canvas.axes.plot(xvals, yvals)
-            self.canvas.axes.grid(True)
-            self.canvas.axes.set_title(f'$f(x) = {function_str}$')
-            self.canvas.axes.axhline(0, color='black', linewidth=1)
-            self.canvas.axes.axvline(0, color='black', linewidth=1)
-            self.canvas.draw()
+            try:
+                xvals = np.arange(lim1, lim2, 0.01)
+                function_str_math = convert_to_math(function_str)
+                def fx(x): return eval(function_str_math)
+                yvals = fx(xvals)
+                self.canvas.axes.cla()
+                self.canvas.axes.plot(xvals, yvals)
+                self.canvas.axes.grid(True)
+                self.canvas.axes.set_title(f'$f(x) = {function_str}$')
+                self.canvas.axes.axhline(0, color='black', linewidth=1)
+                self.canvas.axes.axvline(0, color='black', linewidth=1)
+                self.canvas.draw()
+            except:
+                print('ERROR')
 
     # Method for centering windows
     def center(self):
