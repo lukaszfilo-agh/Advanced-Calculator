@@ -1,5 +1,5 @@
-from math import sqrt, floor
-from typing import Optional, Dict, Callable
+from math import sqrt
+from typing import Optional, Dict, Callable, Union
 import sys
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QAction, QFont
@@ -30,15 +30,21 @@ class CalcMainWindow(QMainWindow):
         # Display widget:
         self.__display_field: Optional[QWidget] = None
 
+        # Overflow display widget:
+        self.__operations_field: Optional[QWidget] = None
+
         # Str val of display:
         self.__str_val = ""
+
+        # Str val of overflow:
+        self.__str_val_operations = ""
 
         # Name, size of window:
         self.setWindowTitle("Advanced Calculator")
         self.setFixedSize(WINDOW_WIDTH + 10, WINDOW_HEIGHT - 200)
 
         # Center window:
-        self.center()
+        self.__center()
 
         # Dark, black:
         # self.setStyleSheet("background-color: #181818")
@@ -51,7 +57,10 @@ class CalcMainWindow(QMainWindow):
         font = QFont("Calibri", 14)
 
         # Label for results display:
-        self.__display_field = QLabel("0")
+        self.__display_field = QLabel("")
+
+        # Label for overflow management:
+        self.__operations_field = QLabel("")
 
         # Helper to get buttons layout and connect them to action management function:
         def get_buttons_layout() -> QVBoxLayout:
@@ -158,6 +167,9 @@ class CalcMainWindow(QMainWindow):
         font.setPointSize(45)
         self.__display_field.setFont(font)
 
+        font.setPointSize(12)
+        self.__operations_field.setFont(font)
+
         # White:
         #field.setStyleSheet("color: #FFFFFF")
         # Black:
@@ -192,6 +204,7 @@ class CalcMainWindow(QMainWindow):
         create_sample_buttons()
 
         # Setting up final layout:
+        field_layout.addWidget(self.__operations_field, alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom)
         field_layout.addWidget(self.__display_field, alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom)
         final_layout.addLayout(field_layout)
         final_layout.addLayout(buttons_layout)
@@ -207,35 +220,47 @@ class CalcMainWindow(QMainWindow):
         # Create statusbar:
         self.setStatusBar(QStatusBar(self))
 
-    def __terminate_too_many_digits_after_dot(self, num: float) -> float:
+    # Rounding if there are too many digits after evaluation: - WORKS
+    def __terminate_too_many_digits_after_dot(self, num: Union[float, str], e: str = None) -> Union[float, str]:
 
-        # Digit limit of our display:
-        n = 13
-
-        # If number of digits exceeds display limit:
-        if len(str(num)) >= n:
+        # if we have float - only evaluated value:
+        if isinstance(num, float):
             # Index of dot point:
             idx_dot_point = str(num).index(".")
 
             # Rounding to max possible digits:
-            rounding_to = n - idx_dot_point - 1
+            rounding_to = 13 - idx_dot_point - 1
 
             return round(num, rounding_to)
-        return num
+        # if we have str - e format value:
+        idx_dot_point = num.index(".")
+
+        # Rounding to max possible digits including e format length:
+        rounding_to = 13 - idx_dot_point - 1 - len(e)
+
+        return str(round(float(num), rounding_to))
+
+    def __change_format_for_large_nums(self, num: Union[int, float]) -> str:
+        return "{:e}".format(num)
 
     # Function to manage clicks:
     def __manage_clicks(self) -> None:
         # Get a button which is a sender of this information:
         sender = self.sender()
 
-        # Delete text - set display to 0: - WORKS
+        # Delete buttons: - WORKS
         if sender.text() in ["C", "CE"]:
+            # We get rid of all input:
+            if sender.text() == "C":
+                self.__str_val_operations = ""
+                self.__operations_field.setText("")
+            # We always delete main display:
             self.__str_val = ""
-            self.__display_field.setText("0")
+            self.__display_field.setText("")
         # Remove digits: - WORKS
         elif sender.text() == "<-":
-            # if there is something to delete and there is no special sign at the end (we can't delete it):
-            if len(self.__str_val) > 0 and self.__str_val[-1] not in ["/", "x", "-", "+"]:
+            # if there is something to delete:
+            if len(self.__str_val) > 0:
                 eval_str = eval(self.__str_val)
                 # If we have a dot point:
                 if isinstance(eval_str, float):
@@ -253,57 +278,159 @@ class CalcMainWindow(QMainWindow):
                 # If we got to plain zero we reset our str_val and start over:
                 if self.__str_val == "0":
                     self.__str_val = ""
-        # Evaluating expressions:
+        # Evaluating expressions: - TO CHANGE
         elif sender.text() == "=":
             # if something was entered - it's not the basic 0 in the display:
             if self.__str_val != "":
-                try:
-                    # Evaluate the expression:
-                    eval_str = eval(self.__str_val)
-                    # if we have float, get rid of too many zeros:
-                    if isinstance(eval_str, float):
-                        eval_str = self.__terminate_too_many_digits_after_dot(eval_str)
-                    self.__str_val = str(eval_str)
-                    self.__display_field.setText(self.__str_val)
-                except ZeroDivisionError:
-                    self.__display_field.setText("Err")
-                    self.__str_val = ""
-        # Digits in sender:
-        elif sender.text() in [str(i) for i in range(0, 10)]:
-            # Check for max display length - don't allow to add more digits if we don't have more space:
-            if len(self.__display_field.text()) < 13:
-                # If there is no 0 already (something was added) or
-                # we have a zero, but it's not on the beginning, or it's on the beginning, but we have a dot point:
-                if sender.text() != "0" or \
-                        (sender.text() == "0" and (self.__display_field.text()[0] != "0" or "." in self.__str_val)):
-                    self.__str_val += sender.text()
-                    self.__display_field.setText(self.__str_val)
-        # Binary operators in sender:
-        elif sender.text() in ["/", "x", "-", "+"]:
-            # We don't allow situations to begin with the operator nd stack them on top of each-other:
-            if 12 > len(self.__str_val) > 0 and self.__str_val[-1] not in ["/", "*", "-", "+"]:
-                # if there already is an operator with 2 operands to be evaluated:
-                if any(sign in self.__str_val for sign in ["/", "*", "-", "+"]):
-                    # if we divide by 0 through eval we have to restart with error:
+                # If there is no additional field:
+                if self.__operations_field.text() == "":
                     try:
+                        # Evaluate the expression:
                         eval_str = eval(self.__str_val)
+                        # if we have float, get rid of too many zeros:
                         if isinstance(eval_str, float):
                             eval_str = self.__terminate_too_many_digits_after_dot(eval_str)
+                        # Fixing overflow after evaluation:
+                        if eval_str >= 1e14:
+                            eval_str = self.__change_format_for_large_nums(eval_str)
                         self.__str_val = str(eval_str)
+                        self.__display_field.setText(self.__str_val)
                     except ZeroDivisionError:
                         self.__display_field.setText("Err")
                         self.__str_val = ""
-                        return
-                # If there's an x we have to swap it for python mul operator to be able to evaluate:
-                if sender.text() == "x":
-                    self.__str_val += "*"
+                # TO ADD: additional field evaluation:
                 else:
-                    self.__str_val += sender.text()
-                # We set the displayed text:
+                    pass
+        # Digits in sender: - WORKS
+        elif sender.text() in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]:
+            # Check for max display length - don't allow to add more digits if we don't have more space:
+            if len(self.__str_val) < 13 or self.__display_field.text() == "ZERO DIVISION":
+                # If sender is not "0":
+                if sender.text() != "0":
+                    # If str_val is already at "0":
+                    if self.__str_val == "0":
+                        # We keep swap it, not append:
+                        self.__str_val = sender.text()
+                    # Else:
+                    else:
+                        # We append:
+                        self.__str_val += sender.text()
+                # If sender is "0":
+                else:
+                    # If there is nothing in str_val or no 0 at the beginning or 0 at the beginning but we have a dot point:
+                    if len(self.__str_val) == 0 or self.__str_val[0] != "0" or (self.__str_val[0] == "0" and "." in self.__str_val):
+                        # We append:
+                        self.__str_val += sender.text()
+                # Change value at display:
                 self.__display_field.setText(self.__str_val)
-            # Overridden display field - add helper label:
-            elif len(self.__str_val) > 12 and self.__str_val[-1] not in ["/", "*", "-", "+"]:
-                pass
+        # Binary operators in sender: WORKS
+        elif sender.text() in ["/", "x", "-", "+"]:
+            # We get the binary op:
+            bin_op = sender.text()
+            if sender.text() == "x":
+                bin_op = "*"
+            # If there is nothing in operations:
+            if len(self.__str_val_operations) == 0:
+                # We have something to draw to operations field:
+                if len(self.__str_val) > 0:
+                    # We take input from str_val and add binary operator:
+                    self.__str_val_operations += self.__str_val + bin_op
+                    self.__operations_field.setText(self.__str_val_operations)
+
+                    # We artificially set str_val to "" so that it won't be evaluated until we enter another value:
+                    self.__str_val = ""
+
+            # If there is something in operations field - there is another operator:
+            else:
+                # Str_val is empty - it wasn't overriden after entering bin_op:
+                if self.__str_val == "":
+                    # if there's no e format:
+                    if "e" not in self.__operations_field.text():
+                        # We swap binary operators:
+                        self.__str_val_operations = self.__str_val_operations[:-1] + bin_op
+                        self.__operations_field.setText(self.__str_val_operations)
+                    else:
+                        self.__operations_field.setText(self.__operations_field.text()[:-1] + bin_op)
+                # Else - we can evaluate:
+                else:
+                    # Trying for 0 division error:
+                    try:
+                        # We get the value from str_val to our operations_val and evaluate:
+                        self.__str_val_operations += self.__str_val
+                        eval_str = eval(self.__str_val_operations)
+
+                        # We'll keep the e format information in case there is one:
+                        e_format = ""
+
+                        # if we have floating point, get rid of too many digits after dot point:
+                        if isinstance(eval_str, float) and len(str(eval_str)) >= 13:
+                            eval_str = self.__terminate_too_many_digits_after_dot(eval_str)
+
+                        # Fixing overflow after evaluation, we block immediate e format application to small numbers:
+                        if len(str(eval_str)) >= 13 and abs(eval_str) > 1:
+
+                            e_format = self.__change_format_for_large_nums(eval_str)
+
+                            # if we take too much display space with e format:
+                            if len(e_format) >= 13:
+                                # We get the position of e - beginning of our format:
+                                e_ind = e_format.index("e")
+
+                                # Block situation of appearing e+00 - round with no e:
+                                if e_format[e_ind + 1] == "0":
+                                    e_format = self.__terminate_too_many_digits_after_dot(float(e_format))
+                                # Else if there is something different then 0 after e:
+                                else:
+                                    # We separate number for e:
+                                    num = e_format[:e_ind]
+                                    e = e_format[e_ind:]
+
+                                    # We round accordingly:
+                                    num = self.__terminate_too_many_digits_after_dot(num, e)
+
+                                    # We connect rounded number with format:
+                                    e_format = num + e
+
+                        # We keep evaluated value in str_val for further operations:
+                        self.__str_val = str(eval_str)
+
+                        # But if we have e_format we enter it on display:
+                        if e_format != "":
+                            self.__display_field.setText(e_format)
+                        # Else - we enter the same value as in str_val:
+                        else:
+                            self.__display_field.setText(self.__str_val)
+
+                        # We keep evaluated value in str_val_operations for further operations:
+                        self.__str_val_operations = str(eval_str) + bin_op
+
+                        # But if we have e_format we enter it on operations display:
+                        if e_format != "":
+                            self.__operations_field.setText(e_format + bin_op)
+                        # Else - we enter the same value as in str_val_operations:
+                        else:
+                            self.__operations_field.setText(self.__str_val_operations)
+
+                        # We artificially set str_val to "" in order to block immediate evaluation:
+                        self.__str_val = ""
+
+                    except ZeroDivisionError:
+                        self.__operations_field.setText("")
+                        self.__display_field.setText("ZERO DIVISION")
+                        self.__str_val = ""
+                        self.__str_val_operations = ""
+        # Other buttons:
+        elif sender.text() == "%":
+            pass
+        elif sender.text() == "1/x":
+            pass
+        elif sender.text() == "x**2":
+            pass
+        elif sender.text() == "sqrt(x)":
+            pass
+        elif sender.text() == "+/-":
+            pass
+
 
     def draw_plot_window(self):
         print('Plotter opened')
@@ -315,7 +442,7 @@ class CalcMainWindow(QMainWindow):
         QApplication.instance().quit
 
     # Method for centering windows
-    def center(self):
+    def __center(self):
         qr = self.frameGeometry()
         cp = self.screen().availableGeometry().center()
 
