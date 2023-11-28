@@ -106,7 +106,7 @@ class PlotWindow(QWidget):
 
         try:
             # Checking for illegal charaters
-            invalid_chars = check_for_bad_chars(function_str)
+            invalid_chars = func_bad_chars(function_str)
             if len(invalid_chars) != 0:
                 raise InvalidCharacters
 
@@ -129,7 +129,7 @@ class PlotWindow(QWidget):
                 xvals = np.arange(lim1, lim2, 0.01)
 
                 # Creating expression for eval
-                function_math = convert_to_math(function_str)
+                function_math = convert_func_math(function_str)
 
                 # Defining lambda function
                 def fx(x): return eval(function_math)
@@ -229,15 +229,15 @@ class Help_Plot(QWidget):
         self.move(qr.topLeft())
 
 
-def check_for_bad_chars(expression):
-    result = re.findall(
-        r'^(?![\d\s\^\*\+\-\(\)\/piesinharcostanctgx]+?$).*', expression)
+def func_bad_chars(expression):
+    result = re.findall(r'(?!(?:sin|cos|e\^|\b\d|x+\b|\b[\(\)\+\-\*\/\^]\b|x))\b\S+\b', expression)
+    
     return result
 
 
-def convert_to_math(expression):
+def convert_func_math(expression):
     # Change 'e^x' to 'np.exp(x)'
-    expression = re.sub(r'e\^(.*)', r'np.exp\1', expression)
+    expression = re.sub(r'e\^(.*)', r'np.exp(\1)', expression)
 
     # Change 'sin' to 'np.sin'
     expression = re.sub(r'\bsin\b', 'np.sin', expression)
@@ -264,6 +264,14 @@ def convert_to_math(expression):
 
     return expression
 
+def convert_lim_math(expression):
+    expression = re.sub(r'\bpi\b', 'np.pi', expression)
+    return expression
+
+def lim_bad_chars(expression):
+    result = re.findall(
+        r'^(?![\dpi]+?$).*', expression)
+    return result
 
 class InvalidCharacters(Exception):
     "Raised when the input can't be evaluated"
