@@ -9,7 +9,8 @@ from PyQt6.QtWidgets import (
     QWidget,
     QToolBar,
     QStatusBar,
-    QLabel
+    QLabel,
+    QMessageBox
 )
 from PyQt6.QtGui import QAction
 from PyQt6.QtCore import Qt, QSize
@@ -17,7 +18,7 @@ from PyQt6 import QtCore, QtWidgets
 import numpy as np
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import (
-    FigureCanvasQTAgg as FigureCanvas, 
+    FigureCanvasQTAgg as FigureCanvas,
     NavigationToolbar2QT as NavigationToolbar
 
 )
@@ -139,6 +140,10 @@ class PlotWindow(QWidget):
         data_button = QPushButton("Insert fuction")
         data_button.clicked.connect(self.get_function)
 
+        # Create button for clearing plot
+        clear_button = QPushButton("Clear plot")
+        clear_button.clicked.connect(self.clear_plot)
+
         # Create button for going back to menu
         back_button = QPushButton("Back to Main Window")
         back_button.clicked.connect(self.back_to_menu)
@@ -157,6 +162,8 @@ class PlotWindow(QWidget):
         bottom_layout.addWidget(
             data_button, alignment=Qt.AlignmentFlag.AlignLeft)
         bottom_layout.addWidget(
+            clear_button, alignment=Qt.AlignmentFlag.AlignCenter)
+        bottom_layout.addWidget(
             back_button, alignment=Qt.AlignmentFlag.AlignRight)
 
         # Adding bottom layout to main layout
@@ -170,21 +177,28 @@ class PlotWindow(QWidget):
         self.parent.show()
         print('Back to menu')
 
+    def clear_plot(self):
+        self.canvas.axes.cla()
+        self.canvas.axes.grid(True)
+        self.canvas.draw()
+
     def get_function(self):
         print('Get data for plot')
         function_str, done1 = QtWidgets.QInputDialog.getText(
             self, 'Function', 'Enter funcion:')
-        lim1, done2 = QtWidgets.QInputDialog.getInt(
+        lim1, done2 = QtWidgets.QInputDialog.getDouble(
             self, 'Lower limit', 'Enter lower limit:')
-        lim2, done3 = QtWidgets.QInputDialog.getInt(
+        lim2, done3 = QtWidgets.QInputDialog.getDouble(
             self, 'Upper limit', 'Enter upper limit:')
         if done1 and done2 and done3:
             try:
+                if lim1 > lim2:
+                    raise(ValueError)
                 xvals = np.arange(lim1, lim2, 0.01)
-                function_str_math = convert_to_math(function_str)
-                def fx(x): return eval(function_str_math)
+                function_str_math = "lambda x: "
+                function_str_math += convert_to_math(function_str)
+                fx = eval(function_str_math)
                 yvals = fx(xvals)
-                self.canvas.axes.cla()
                 self.canvas.axes.plot(xvals, yvals)
                 self.canvas.axes.grid(True)
                 self.canvas.axes.set_title(f'$f(x) = {function_str}$')
@@ -192,7 +206,7 @@ class PlotWindow(QWidget):
                 self.canvas.axes.axvline(0, color='black', linewidth=1)
                 self.canvas.draw()
             except:
-                print('ERROR')
+                self.error_window(function_str, lim1, lim2)
 
     # Method for centering windows
     def center(self):
@@ -202,17 +216,35 @@ class PlotWindow(QWidget):
         qr.moveCenter(cp)
         self.move(qr.topLeft())
 
+    def error_window(self, str, lim1, lim2):
+        message_box = QMessageBox()
+        if lim1 > lim2:
+            message_box.setText(f"Lower limit is greater than upper limit.")
+            print("Error limits")
+        else:
+            message_box.setText(
+                f"Data enetered:\nf(x)={str}\nlim1={lim1}\nlim2={lim2}")
+            print("Error data")
+        message_box.setWindowTitle("ERROR")
+        message_box.setStandardButtons(QMessageBox.StandardButton.Ok)
 
-def convert_to_math(zapis):
-    # Zamiana 'x' na '*x'
-    zapis = re.sub(r'(\d)([a-zA-Z])', r'\1*\2', zapis)
-    # Zamiana '^' na '**'
-    zapis = zapis.replace('^', '**')
-    # Dodanie znaku mnożenia w przypadku 'x(' lub ')x'
-    zapis = re.sub(r'([a-zA-Z])(\()', r'\1*\2', zapis)
-    zapis = re.sub(r'(\))([a-zA-Z])', r'\1*\2', zapis)
+        # Action after clicking ok
+        result = message_box.exec()
+        if result == QMessageBox.StandardButton.Ok:
+            print("Error closed")
 
-    return zapis
+
+def convert_to_math(expression):
+    # Change 'sin' to 'np.sin'
+    expression = re.sub(r'\bsin\b', 'np.sin', expression)
+    # Change 'x' to '*x'
+    expression = re.sub(r'(\d)([a-zA-Z])', r'\1*\2', expression)
+    # Change '^' to '**'
+    expression = expression.replace('^', '**')
+    # Adding multiplication sing in 'x(' or ')x'
+    expression = re.sub(r'(\d)(\()', r'\1*\2', expression)
+    expression = re.sub(r'(\))([a-zA-Z])', r'\1*\2', expression)
+    return expression
 
 
 def main():
