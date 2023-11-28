@@ -226,7 +226,7 @@ def convert_to_math(expression):
     expression = re.sub(r'\btg\b', 'np.tan', expression)
 
     # Change 'x' to '*x'
-    expression = re.sub(r'(\d)([a-zA-Z])', r'\1*\2', expression)
+    expression = re.sub(r'(\d)(x)', r'\1*\2', expression)
 
     # Change '^' to '**'
     expression = expression.replace('^', '**')
