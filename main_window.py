@@ -1,7 +1,7 @@
-from math import sqrt
-from typing import Optional, Dict, Callable, Union
+import math
+from typing import Optional, Union
 import sys
-from PyQt6.QtCore import Qt, QSize
+from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction, QFont
 from PyQt6.QtWidgets import (
     QApplication,
@@ -12,7 +12,7 @@ from PyQt6.QtWidgets import (
     QWidget,
     QPushButton,
     QToolBar,
-    QStatusBar, QTextEdit
+    QStatusBar
 )
 
 WINDOW_WIDTH = 400
@@ -314,6 +314,151 @@ class CalcMainWindow(QMainWindow):
             # Reset str_val for further evaluation:
             self.__str_val = ""
 
+        # Helper function to handle zero division error:
+        def handle_zero_division_err() -> None:
+            self.__operations_field.setText("")
+            self.__display_field.setText("ZERO DIVISION")
+            self.__str_val = ""
+            self.__str_val_operations = ""
+
+        # Helper function to handle value error:
+        def handle_value_err() -> None:
+            self.__operations_field.setText("")
+            self.__display_field.setText("INVALID INPUT")
+            self.__str_val = ""
+            self.__str_val_operations = ""
+
+        # Helper function managing 3 button clicks based on their function:
+        def manage_1_over_x_sq_sqrt(button_name: str) -> None:
+            operation = None
+            if button_name == "1/x":
+                operation = lambda x: 1/x
+            elif button_name == "x**2":
+                operation = lambda x: x**2
+            elif button_name == "sqrt(x)":
+                operation = lambda x: math.sqrt(x)
+
+            # We have entered digits but have yet to perform any operation:
+            if self.__str_val != "" and self.__str_val_operations == "":
+                # We do not need to eval str_val:
+                float_val = float(self.__str_val)
+                float_val = operation(float_val)
+
+                # if we have floating point, get rid of too many digits after dot point:
+                if isinstance(float_val, float) and len(str(float_val)) >= 13:
+                    float_val = terminate_too_many_digits_after_dot(float_val)
+
+                # We'll keep the e format information in case there is one:
+                e_format = get_e_format(float_val)
+
+                # If we erased display, we don't change its view:
+                if self.__display_field.text() != "":
+                    # Update str_val in order to place it on display:
+                    self.__str_val = str(float_val)
+                else:
+                    self.__str_val = ""
+
+                # But if we have e_format we enter it on display:
+                if e_format != "":
+                    if e_format[-2:] != "00":
+                        self.__display_field.setText(e_format)
+                    else:
+                        self.__display_field.setText(self.__str_val)
+                # Else - we enter the same value as in str_val:
+                else:
+                    self.__display_field.setText(self.__str_val)
+
+                # We keep evaluated value in str_val_operations and add new bin_op:
+                self.__str_val_operations = str(float_val)
+
+                # But if we have e_format we enter it on operations display with bin_op:
+                if e_format != "":
+                    self.__operations_field.setText(e_format)
+                # Else - we enter the same value as in str_val_operations:
+                else:
+                    self.__operations_field.setText(self.__str_val_operations)
+
+                # Keep value reset:
+                self.__str_val = ""
+
+            # We performed operations, but we don't have any following operator:
+            elif self.__str_val_operations != 0 and self.__str_val_operations[-1] not in ["/", "*", "-", "+"]:
+                # Evaluate:
+                eval_str = eval(self.__str_val_operations)
+                eval_str = operation(eval_str)
+
+                # if we have floating point, get rid of too many digits after dot point:
+                if isinstance(eval_str, float) and len(str(eval_str)) >= 13:
+                    eval_str = terminate_too_many_digits_after_dot(eval_str)
+
+                # We'll keep the e format information in case there is one:
+                e_format = get_e_format(eval_str)
+
+                # We keep evaluated value in str_val for further operations:
+                self.__str_val = str(eval_str)
+
+                # But if we have e_format we enter it on display:
+                if e_format != "":
+                    self.__display_field.setText(e_format)
+                # Else - we enter the same value as in str_val:
+                else:
+                    self.__display_field.setText(self.__str_val)
+
+                # We keep evaluated value in str_val_operations with bin_op for further operations:
+                self.__str_val_operations = str(eval_str)
+
+                # But if we have e_format we enter it on operations display with bin_op:
+                if e_format != "":
+                    self.__operations_field.setText(e_format)
+                # Else - we enter the same value as in str_val_operations:
+                else:
+                    self.__operations_field.setText(self.__str_val_operations)
+
+                # Setting str_val to "":
+                self.__str_val = ""
+
+            # We have str_val operations:
+            elif self.__str_val_operations != 0 and self.__str_val_operations[-1] in ["/", "*", "-", "+"]:
+                # We haven't entered any digits -
+                # evaluate 1/x on str_val and perform operation with given op (enter result in str_val):
+                if self.__str_val == "":
+                    # Evaluate - only the number:
+                    eval_str = eval(self.__str_val_operations[:-1])
+                    eval_str = operation(eval_str)
+
+                    # if we have floating point, get rid of too many digits after dot point:
+                    if isinstance(eval_str, float) and len(str(eval_str)) >= 13:
+                        eval_str = terminate_too_many_digits_after_dot(eval_str)
+
+                    # Get e format:
+                    e_format = get_e_format(eval_str)
+
+                    # We keep evaluated value in str_val for further operations:
+                    self.__str_val = str(eval_str)
+
+                    if e_format != "":
+                        self.__display_field.setText(e_format)
+                    else:
+                        self.__display_field.setText(self.__str_val)
+                    # Str_val_operations remains as it was:
+                # Else we have str_val - perform 1/x on it:
+                else:
+                    # Evaluate str_val
+                    eval_str = eval(self.__str_val)
+                    eval_str = operation(eval_str)
+
+                    # if we have floating point, get rid of too many digits after dot point:
+                    if isinstance(eval_str, float) and len(str(eval_str)) >= 13:
+                        eval_str = terminate_too_many_digits_after_dot(eval_str)
+
+                    # We don't track e format - we enter str_val so it's in range.
+
+                    # Keep the value:
+                    self.__str_val = str(eval_str)
+
+                    # Display it:
+                    self.__display_field.setText(self.__str_val)
+
         # Get a button which is a sender of this information:
         sender = self.sender()
 
@@ -337,25 +482,27 @@ class CalcMainWindow(QMainWindow):
                     self.__display_field.setText("")
         # Remove digits:
         elif sender.text() == "<-":
-            # if there is something to delete:
-            if len(self.__str_val) > 0:
-                eval_str = eval(self.__str_val)
-                # If we have a dot point:
-                if isinstance(eval_str, float):
-                    # We simply override our string by removing the last char:
-                    self.__str_val = self.__str_val[:-1]
-                    # If we are at a situation that there's only dot point left, with nothing after it,
-                    # we override again:
-                    if self.__str_val[-1] == ".":
+            # Don't allow removal when we have e format:
+            if "e" not in self.__display_field.text():
+                # if there is something to delete:
+                if len(self.__str_val) > 0:
+                    eval_str = eval(self.__str_val)
+                    # If we have a dot point:
+                    if isinstance(eval_str, float):
+                        # We simply override our string by removing the last char:
                         self.__str_val = self.__str_val[:-1]
-                # If we have int, we can just divide using "//" to get rid of the last digit:
-                else:
-                    self.__str_val = str(eval(self.__str_val) // 10)
-                # Update display:
-                self.__display_field.setText(self.__str_val)
-                # If we got to plain zero we reset our str_val and start over:
-                if self.__str_val == "0":
-                    self.__str_val = ""
+                        # If we are at a situation that there's only dot point left, with nothing after it,
+                        # we override again:
+                        if self.__str_val[-1] == ".":
+                            self.__str_val = self.__str_val[:-1]
+                    # If we have int, we can just divide using "//" to get rid of the last digit:
+                    else:
+                        self.__str_val = str(eval(self.__str_val) // 10)
+                    # Update display:
+                    self.__display_field.setText(self.__str_val)
+                    # If we got to plain zero we reset our str_val and start over:
+                    if self.__str_val == "0":
+                        self.__str_val = ""
         # Evaluating with "=":
         elif sender.text() == "=":
             # If there is an operator in str_val_operations:
@@ -375,10 +522,7 @@ class CalcMainWindow(QMainWindow):
                         set_displays_after_op_eq(eval_str)
 
                 except ZeroDivisionError:
-                    self.__operations_field.setText("")
-                    self.__display_field.setText("ZERO DIVISION")
-                    self.__str_val = ""
-                    self.__str_val_operations = ""
+                    handle_zero_division_err()
             # Else - we simply keep the number (nothing to evaluate on):
             else:
                 pass
@@ -389,7 +533,7 @@ class CalcMainWindow(QMainWindow):
             if len(self.__str_val_operations) > 0 and self.__str_val_operations[-1] not in ["/", "*", "-", "+"]:
                 pass
             # Check for max display length - don't allow to add more digits if we don't have more space:
-            elif (len(self.__str_val) < 13) or self.__display_field.text() == "ZERO DIVISION":
+            elif (len(self.__str_val) < 13) or self.__display_field.text() in ["ZERO DIVISION", "INVALID INPUT"]:
                 # If sender is not "0":
                 if sender.text() != "0":
                     # If str_val is already at "0":
@@ -402,14 +546,15 @@ class CalcMainWindow(QMainWindow):
                         self.__str_val += sender.text()
                 # If sender is "0":
                 else:
-                    # If there is nothing in str_val or no 0 at the beginning or 0 at the beginning but we have a dot point:
+                    # If there is nothing in str_val or no 0 at the beginning
+                    # or 0 at the beginning, but we have a dot point:
                     if len(self.__str_val) == 0 or self.__str_val[0] != "0" or (
                             self.__str_val[0] == "0" and "." in self.__str_val):
                         # We append:
                         self.__str_val += sender.text()
                 # Change value at display:
                 self.__display_field.setText(self.__str_val)
-        # Binary operators in sender: AFTER DELETING DISPLAY AND ENTERING OPERATOR IT CAUSES NUMBER FROM OPERATIONS FIELD TO DISPLAY IMMEDIATELY (MAY NEED AN ADJUSTMENT)
+        # Binary operators in sender:
         elif sender.text() in ["/", "x", "-", "+"]:
             # We get the binary op:
             bin_op = sender.text()
@@ -481,10 +626,7 @@ class CalcMainWindow(QMainWindow):
                             self.__str_val = ""
 
                         except ZeroDivisionError:
-                            self.__operations_field.setText("")
-                            self.__display_field.setText("ZERO DIVISION")
-                            self.__str_val = ""
-                            self.__str_val_operations = ""
+                            handle_zero_division_err()
                 # Else - we evaluate (we have 1 operator and str_val):
                 else:
                     # Trying for 0 division error:
@@ -523,19 +665,21 @@ class CalcMainWindow(QMainWindow):
                         # Setting str_val to "":
                         self.__str_val = ""
                     except ZeroDivisionError:
-                        self.__operations_field.setText("")
-                        self.__display_field.setText("ZERO DIVISION")
-                        self.__str_val = ""
-                        self.__str_val_operations = ""
+                        handle_zero_division_err()
         # Other buttons:
         elif sender.text() == "%":
             pass
-        elif sender.text() == "1/x":
-            pass
-        elif sender.text() == "x**2":
-            pass
-        elif sender.text() == "sqrt(x)":
-            pass
+        # 1/x, x**2, sqrt(x) in sender:
+        elif sender.text() in ["1/x", "x**2", "sqrt(x)"]:
+            # Protect against trying to do operation over string:
+            if self.__display_field.text() not in ["ZERO DIVISION", "INVALID INPUT"]:
+                # Trying for zero division and sqrt of negative values:
+                try:
+                    manage_1_over_x_sq_sqrt(sender.text())
+                except ZeroDivisionError:
+                    handle_zero_division_err()
+                except ValueError:
+                    handle_value_err()
         elif sender.text() == "+/-":
             pass
 
