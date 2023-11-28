@@ -319,13 +319,22 @@ class CalcMainWindow(QMainWindow):
 
         # Delete buttons:
         if sender.text() in ["C", "CE"]:
-            # We get rid of all input:
+            # We get rid of all output:
             if sender.text() == "C":
                 self.__str_val_operations = ""
                 self.__operations_field.setText("")
-            # We always delete main display:
-            self.__str_val = ""
-            self.__display_field.setText("")
+                self.__str_val = ""
+                self.__display_field.setText("")
+            elif sender.text() == "CE":
+                # Prevent situations in which we were able to delete main display
+                # when there was operation field and no operator - resulted in inf:
+                if self.__str_val_operations != "" and self.__str_val_operations[-1] in ["/", "*", "-", "+"]:
+                    self.__str_val = ""
+                    self.__display_field.setText("")
+                # if its empty we can remove freely:
+                elif self.__str_val_operations == "":
+                    self.__str_val = ""
+                    self.__display_field.setText("")
         # Remove digits:
         elif sender.text() == "<-":
             # if there is something to delete:
@@ -377,8 +386,7 @@ class CalcMainWindow(QMainWindow):
         elif sender.text() in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]:
             # Protect against adding a number into display when
             # we have str_val_operations, but we don't have an operator:
-            if self.__display_field.text() == "" and len(self.__str_val_operations) > 0 \
-                    and self.__str_val_operations[-1] not in ["/", "*", "-", "+"]:
+            if len(self.__str_val_operations) > 0 and self.__str_val_operations[-1] not in ["/", "*", "-", "+"]:
                 pass
             # Check for max display length - don't allow to add more digits if we don't have more space:
             elif (len(self.__str_val) < 13) or self.__display_field.text() == "ZERO DIVISION":
@@ -449,6 +457,8 @@ class CalcMainWindow(QMainWindow):
                             if self.__display_field.text() != "":
                                 # Update str_val in order to place it on display:
                                 self.__str_val = str(eval_str)
+                            else:
+                                self.__str_val = ""
 
                             # But if we have e_format we enter it on display:
                             if e_format != "":
