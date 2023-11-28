@@ -104,20 +104,26 @@ class PlotWindow(QWidget):
         function_str, done1 = QtWidgets.QInputDialog.getText(
             self, 'Function', 'f(x):')
 
-        # Getting lower limit
-        lim1, done2 = QtWidgets.QInputDialog.getDouble(
-            self, 'Lower limit', 'Enter lower limit:')
+        try:
+            # Checking for illegal charaters
+            invalid_chars = check_for_bad_chars(function_str)
+            if len(invalid_chars) != 0:
+                raise InvalidCharacters
 
-        # Getting upper limit
-        lim2, done3 = QtWidgets.QInputDialog.getDouble(
-            self, 'Upper limit', 'Enter upper limit:')
+            # Getting lower limit
+            lim1, done2 = QtWidgets.QInputDialog.getDouble(
+                self, 'Lower limit', 'Enter lower limit:')
 
-        # Drawing plot with entered data
-        if done1 and done2 and done3:
-            # Try block for errors
-            try:
-                if lim1 > lim2:
-                    raise (ValueError)
+            # Getting upper limit
+            lim2, done3 = QtWidgets.QInputDialog.getDouble(
+                self, 'Upper limit', 'Enter upper limit:')
+
+            # Checking for limit error
+            if lim1 > lim2:
+                raise LimError
+
+            # Drawing plot with entered data
+            if done1 and done2 and done3:
 
                 # Creating vector with x values
                 xvals = np.arange(lim1, lim2, 0.01)
@@ -143,11 +149,20 @@ class PlotWindow(QWidget):
                 # Displaying plot
                 self.canvas.draw()
 
-            # Catching errors and displaying error window
-            except:
-                self.error_window(function_str, lim1, lim2)
+        # Catching errors for invalid chars
+        except InvalidCharacters:
+            self.error_window(invalid_chars)
+
+        # Catching errors for LimErrors
+        except LimError:
+            self.error_window(lim1=lim1, lim2=lim2)
+
+        # Catching errors and displaying error window
+        except:
+            self.error_window(function_str, lim1, lim2)
 
     # Method for centering windows
+
     def center(self):
         qr = self.frameGeometry()
         cp = self.screen().availableGeometry().center()
@@ -155,15 +170,18 @@ class PlotWindow(QWidget):
         qr.moveCenter(cp)
         self.move(qr.topLeft())
 
-    def error_window(self, str, lim1, lim2):
+    def error_window(self, str='', lim1=0, lim2=0):
         message_box = QMessageBox()
         if lim1 > lim2:
             message_box.setText(f"Lower limit is greater than upper limit.")
             print("Error limits")
-        else:
+        elif lim1 != 0:
             message_box.setText(
                 f"Data enetered:\nf(x)={str}\nlim1={lim1}\nlim2={lim2}")
             print("Error data")
+        else:
+            message_box.setText(f"You have entered invalid input: {str}.")
+            print("Invalid chars")
         message_box.setWindowTitle("ERROR")
         message_box.setStandardButtons(QMessageBox.StandardButton.Ok)
 
@@ -211,6 +229,12 @@ class Help_Plot(QWidget):
         self.move(qr.topLeft())
 
 
+def check_for_bad_chars(expression):
+    result = re.findall(
+        r'^(?![\d\s\^\*\+\-\(\)\/piesinharcostanctgx]+?$).*', expression)
+    return result
+
+
 def convert_to_math(expression):
     # Change 'e^x' to 'np.exp(x)'
     expression = re.sub(r'e\^(.*)', r'np.exp\1', expression)
@@ -231,8 +255,21 @@ def convert_to_math(expression):
     # Change '^' to '**'
     expression = expression.replace('^', '**')
 
+    # Change ')(' to ')*('
+    expression = expression.replace(')(', ')*(')
+
     # Adding multiplication sing in 'x(' or ')x'
-    expression = re.sub(r'(\d)(\()', r'\1*\2', expression)
-    expression = re.sub(r'(\))([a-zA-Z])', r'\1*\2', expression)
+    expression = re.sub(r'([1-9x])(\()', r'\1*\2', expression)
+    expression = re.sub(r'(\))([1-9x])', r'\1*\2', expression)
 
     return expression
+
+
+class InvalidCharacters(Exception):
+    "Raised when the input can't be evaluated"
+    pass
+
+
+class LimError(Exception):
+    "Raised when lim1 > lim2"
+    pass
