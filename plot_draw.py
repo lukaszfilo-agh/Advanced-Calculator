@@ -104,12 +104,14 @@ class PlotWindow(QWidget):
 
     # Function for drawing plots
     def draw_plot(self):
+        # Creating dialog for data input
+        dialog_data = InputDialog()
+        
+        # Getting data from input
+        dialog_data.exec()
+        function_str, lim1, lim2 = dialog_data.getInputs()
+
         try:
-            dialog_data = InputDialog()
-            dialog_data.exec()
-
-            function_str, lim1, lim2 = dialog_data.getInputs()
-
             if len(function_str) == 0 or len(lim1) == 0 or len(lim2) == 0:
                 raise InputError
 
@@ -126,30 +128,7 @@ class PlotWindow(QWidget):
             if lim1 > lim2:
                 raise LimError
 
-            # Creating vector with x values
-            xvals = np.arange(lim1, lim2, 0.01)
-
-            # Creating expression for eval
-            function_math = convert_func_math(function_str)
-
-            # Defining lambda function
-            def fx(x): return eval(function_math)
-
-            # Calculating values for function
-            yvals = fx(xvals)
-
-            # Drawing plot
-            self.canvas.axes.plot(xvals, yvals)
-            # Showing grid
-            self.canvas.axes.grid(True)
-            # Setting title
-            self.canvas.axes.set_title(f'$f(x) = {function_str}$')
-            # Adding bolded x and y axis
-            self.canvas.axes.axhline(0, color='black', linewidth=1)
-            self.canvas.axes.axvline(0, color='black', linewidth=1)
-            # Displaying plot
-            self.canvas.draw()
-
+        # Catching errors for empty data
         except InputError:
             self.error_window('Entered data cannot be empty')
 
@@ -165,8 +144,38 @@ class PlotWindow(QWidget):
         except:
             self.error_window(function_str, lim1, lim2)
 
-    # Method for centering windows
+        # Creating vector with x values
+        xvals = np.arange(lim1, lim2, 0.01)
 
+        # Creating expression for eval
+        function_math = convert_func_math(function_str)
+        
+        # Defining lambda function
+        def fx(x): return eval(function_math)
+
+        try:
+            # Calculating values for function
+            yvals = fx(xvals)
+
+        except:
+            self.error_window('Error while calc:\n' + function_math, lim1, lim2)
+
+        # Drawing plot
+        self.canvas.axes.plot(xvals, yvals)
+        # Showing grid
+        self.canvas.axes.grid(True)
+        # Setting title
+        self.canvas.axes.set_title(f'$f(x) = {function_str}$')
+        # Adding bolded x and y axis
+        self.canvas.axes.axhline(0, color='black', linewidth=1)
+        self.canvas.axes.axvline(0, color='black', linewidth=1)
+        # Setting lims for x axis
+        # self.canvas.axes.set_xlim((lim1, lim2))
+        # self.canvas.axes.set_ylim((fx(lim1), fx(lim2)))
+        # Displaying plot
+        self.canvas.draw()
+
+    # Method for centering windows
     def center(self):
         qr = self.frameGeometry()
         cp = self.screen().availableGeometry().center()
@@ -200,7 +209,7 @@ class PlotWindow(QWidget):
 class InputDialog(QDialog):
     def __init__(self):
         super().__init__()
-        
+        self.setWindowTitle("Input data")
         buttonBox = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel, self)
         layout = QFormLayout(self)
         # labels = ['f(x):', 'Lower limit:', 'Upper limit:']
@@ -265,6 +274,9 @@ def func_bad_chars(expression):
 def convert_func_math(expression):
     # Change 'e^x' to 'np.exp(x)'
     expression = re.sub(r'e\^(.*)', r'np.exp(\1)', expression)
+
+    # Change 'e^x' to 'np.exp(x)'
+    expression = re.sub(r'\|(.*)\|', r'np.abs(\1)', expression)
 
     # Change 'sin' to 'np.sin'
     expression = re.sub(r'\bsin\b', 'np.sin', expression)
