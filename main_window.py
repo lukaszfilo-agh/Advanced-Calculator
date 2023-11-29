@@ -248,6 +248,11 @@ class CalcMainWindow(QMainWindow):
 
             return str(round(float(num), rounding_to))
 
+        # Helper function which rounds if there are too many digits in display after adding minus:
+        def terminate_too_many_digits(num: int) -> int:
+            rounding_to = 13 - len(str(num))
+            return round(num, rounding_to) // 10
+
         # Helper function which changes number to string e notation:
         def change_format_for_large_nums(num: Union[int, float]) -> str:
             return "{:e}".format(num)
@@ -261,25 +266,24 @@ class CalcMainWindow(QMainWindow):
 
                 e_format = change_format_for_large_nums(num)
 
+                # Block too small e:
+                if int(e_format[-2:]) < 11:
+                    return ""
+
                 # if we take too much display space with e format:
                 if len(e_format) >= 13:
                     # We get the position of e - beginning of our format:
                     e_ind = e_format.index("e")
 
-                    # Block situation of appearing e+00 - round with no e:
-                    if e_format[e_ind + 1] == "0":
-                        e_format = terminate_too_many_digits_after_dot(float(e_format))
-                    # Else if there is something different then 0 after e:
-                    else:
-                        # We separate number for e:
-                        num = e_format[:e_ind]
-                        e = e_format[e_ind:]
+                    # We separate number for e:
+                    num = e_format[:e_ind]
+                    e = e_format[e_ind:]
 
-                        # We round accordingly:
-                        num = terminate_too_many_digits_after_dot(num, e)
+                    # We round accordingly:
+                    num = terminate_too_many_digits_after_dot(num, e)
 
-                        # We connect rounded number with format:
-                        e_format = num + e
+                    # We connect rounded number with format:
+                    e_format = num + e
             return e_format
 
         # Helper function which reoccurs in different cases of "=" operator:
@@ -366,10 +370,7 @@ class CalcMainWindow(QMainWindow):
 
                 # But if we have e_format we enter it on display:
                 if e_format != "":
-                    if e_format[-2:] != "00":
-                        self.__display_field.setText(e_format)
-                    else:
-                        self.__display_field.setText(self.__str_val)
+                    self.__display_field.setText(e_format)
                 # Else - we enter the same value as in str_val:
                 else:
                     self.__display_field.setText(self.__str_val)
@@ -694,8 +695,73 @@ class CalcMainWindow(QMainWindow):
                     handle_value_err()
                 except OverflowError:
                     handle_overflow_err()
+        # +/- in sender:
         elif sender.text() == "+/-":
-            pass
+            # If we entered a value:
+            if self.__str_val != "":
+                # We change its sign:
+                if self.__str_val[0] == "-":
+                    self.__str_val = self.__str_val[1:]
+                else:
+                    self.__str_val = "-" + self.__str_val
+                    # If there's no dot:
+                    if "." not in self.__str_val:
+                        # We get int:
+                        val = int(self.__str_val)
+
+                        # If we have too many digits in display, we terminate them:
+                        if len(str(val)) >= 14:
+                            val = terminate_too_many_digits(val)
+                    # Else - there's dot:
+                    else:
+                        # We get float:
+                        val = float(self.__str_val)
+
+                        # If we have too many digits in display (excluding dot)
+                        if len(str(val)) >= 13:
+                            val = terminate_too_many_digits_after_dot(val)
+                    # Set str_val:
+                    self.__str_val = str(val)
+                # Display:
+                self.__display_field.setText(self.__str_val)
+            # We haven't entered a value:
+            else:
+                # We have operations value:
+                if self.__str_val_operations != "":
+                    bin_op = ""
+                    # If there's an operator:
+                    if self.__str_val_operations[-1] in ["/", "*", "-", "+"]:
+                        # We remember it in bin_op variable, but delete it from str_val_operations:
+                        bin_op = self.__str_val_operations[-1]
+                        self.__str_val_operations = self.__str_val_operations[:-1]
+                    # We change its sign:
+                    if self.__str_val_operations[0] == "-":
+                        # Set str_val_operations and add bin_op if there's one:
+                        self.__str_val_operations = self.__str_val_operations[1:] + bin_op
+                    else:
+                        self.__str_val_operations = "-" + self.__str_val_operations
+                        # If there's no dot:
+                        if "." not in self.__str_val_operations:
+                            # We get int:
+                            val = int(self.__str_val_operations)
+
+                            # If we have too many digits in display, we terminate them:
+                            if len(str(val)) >= 14:
+                                val = terminate_too_many_digits(val)
+                        # Else - there's dot:
+                        else:
+                            # We get float:
+                            val = float(self.__str_val_operations)
+
+                            # If we have too many digits in display (excluding dot)
+                            if len(str(val)) >= 13:
+                                val = terminate_too_many_digits_after_dot(val)
+                        # Set str_val_operations and add operator (if there's one):
+                        self.__str_val_operations = str(val) + bin_op
+                    # Display (set display field without operator if there's one):
+                    self.__display_field.setText(self.__str_val_operations if bin_op == ""
+                                                 else self.__str_val_operations[:-1])
+                    self.__operations_field.setText(self.__str_val_operations)
 
     def draw_plot_window(self):
         print('Plotter opened')
