@@ -303,7 +303,6 @@ class CalcMainWindow(QMainWindow):
 
             # We keep evaluated value in str_val_operations for further operations:
             self.__str_val_operations = str(value)
-            print(self.__str_val_operations)
             # But if we have e_format we enter it on operations display:
             if e_format != "":
                 self.__operations_field.setText(e_format)
@@ -325,6 +324,13 @@ class CalcMainWindow(QMainWindow):
         def handle_value_err() -> None:
             self.__operations_field.setText("")
             self.__display_field.setText("INVALID INPUT")
+            self.__str_val = ""
+            self.__str_val_operations = ""
+
+        # Helper function to handle overflow error:
+        def handle_overflow_err() -> None:
+            self.__operations_field.setText("")
+            self.__display_field.setText("INF")
             self.__str_val = ""
             self.__str_val_operations = ""
 
@@ -523,6 +529,8 @@ class CalcMainWindow(QMainWindow):
 
                 except ZeroDivisionError:
                     handle_zero_division_err()
+                except OverflowError:
+                    handle_overflow_err()
             # Else - we simply keep the number (nothing to evaluate on):
             else:
                 pass
@@ -533,7 +541,7 @@ class CalcMainWindow(QMainWindow):
             if len(self.__str_val_operations) > 0 and self.__str_val_operations[-1] not in ["/", "*", "-", "+"]:
                 pass
             # Check for max display length - don't allow to add more digits if we don't have more space:
-            elif (len(self.__str_val) < 13) or self.__display_field.text() in ["ZERO DIVISION", "INVALID INPUT"]:
+            elif (len(self.__str_val) < 13) or self.__display_field.text() in ["ZERO DIVISION", "INVALID INPUT", "INF"]:
                 # If sender is not "0":
                 if sender.text() != "0":
                     # If str_val is already at "0":
@@ -627,6 +635,8 @@ class CalcMainWindow(QMainWindow):
 
                         except ZeroDivisionError:
                             handle_zero_division_err()
+                        except OverflowError:
+                            handle_overflow_err()
                 # Else - we evaluate (we have 1 operator and str_val):
                 else:
                     # Trying for 0 division error:
@@ -666,13 +676,15 @@ class CalcMainWindow(QMainWindow):
                         self.__str_val = ""
                     except ZeroDivisionError:
                         handle_zero_division_err()
+                    except OverflowError:
+                        handle_overflow_err()
         # Other buttons:
         elif sender.text() == "%":
             pass
         # 1/x, x**2, sqrt(x) in sender:
         elif sender.text() in ["1/x", "x**2", "sqrt(x)"]:
             # Protect against trying to do operation over string:
-            if self.__display_field.text() not in ["ZERO DIVISION", "INVALID INPUT"]:
+            if self.__display_field.text() not in ["ZERO DIVISION", "INVALID INPUT", "INF"]:
                 # Trying for zero division and sqrt of negative values:
                 try:
                     manage_1_over_x_sq_sqrt(sender.text())
@@ -680,6 +692,8 @@ class CalcMainWindow(QMainWindow):
                     handle_zero_division_err()
                 except ValueError:
                     handle_value_err()
+                except OverflowError:
+                    handle_overflow_err()
         elif sender.text() == "+/-":
             pass
 
