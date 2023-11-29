@@ -105,7 +105,7 @@ class PlotWindow(QWidget):
     # Function for drawing plots
     def draw_plot(self):
         # Creating dialog for data input
-        dialog_data = InputDialog()
+        dialog_data = InputDialog2()
         
         # Getting data from input
         dialog_data.exec()
@@ -205,6 +205,95 @@ class PlotWindow(QWidget):
 
     def show_help(self):
         self.help_window.show()
+
+# Class for input dialog
+class InputDialog2(QDialog):
+    def __init__(self):
+        super().__init__()
+        # Calling function to initialize UI
+        self.init_ui()
+
+    def init_ui(self):
+        # Setting window title
+        self.setWindowTitle('Wprowadź wzór funkcji')
+        # Setting window size
+        self.resize(400, 200)
+
+        # Creating main layout
+        main_layout = QVBoxLayout()
+
+        # Input fields list
+        self.input_fields = [
+            QLineEdit(),  # Function input
+            QLineEdit(),  # Lower limit input
+            QLineEdit()  # Upper limit input
+        ]
+        
+        # Input fields labels
+        labels_text = ['f(x):', 'Lower limit:', 'Upper limit']
+
+        # Setting all input fields as read only
+        for input_field in self.input_fields:
+            input_field.setReadOnly(True)
+
+        for i in range(len(self.input_fields)):
+            label = QLabel(labels_text[i])
+            main_layout.addWidget(label)
+            main_layout.addWidget(self.input_fields[i])
+
+
+        self.buttons_layout = QVBoxLayout()
+        main_layout.addLayout(self.buttons_layout)
+
+        # Creating keyboards
+        self.keyboards = [
+            [  # Keyboard for function
+                ['7', '8', '9', '/'],
+                ['4', '5', '6', '*'],
+                ['1', '2', '3', '-'],
+                ['0', '.', '=', '+'],
+                ['(', ')', 'C', 'OK']
+            ],
+            [  # Klawiatura keyboard for limits
+                ['1', '2', '3'],
+                ['4', '5', '6'],
+                ['7', '8', '9'],
+                ['0', '.', 'C'],
+                ['(', ')', 'OK']
+            ]
+        ]
+
+        # Setting active keyboard
+        self.active_keyboard = 0
+
+        # Creating buttons for changing input fields
+        switch_func_button = QPushButton('f(x)')
+        # switch_func_button.clicked.connect(self.on_switch_button_clicked(0))
+        switch_upper_limit = QPushButton('Lower limit')
+        # switch_upper_limit.clicked.connect(self.on_switch_button_clicked(1))
+        switch_lower_limit = QPushButton('Upper limit')
+        # switch_lower_limit.clicked.connect(self.on_switch_button_clicked(2))
+
+        # Adding buttons to layout
+        main_layout.addWidget(switch_func_button)
+        main_layout.addWidget(switch_upper_limit)
+        main_layout.addWidget(switch_lower_limit)
+
+        # Setting main_layout as dialog layout
+        self.setLayout(main_layout)
+
+        self.active_field = 0
+        self.update_keyboard()
+
+    def on_switch_button_clicked(self, idx):
+        self.active_field = idx
+        self.update_keyboard()
+
+    def on_button_clicked(self):
+        pass
+
+    def update_keyboard(self):
+        pass
 
 class InputDialog(QDialog):
     def __init__(self):
