@@ -351,20 +351,25 @@ class CalcMainWindow(QMainWindow):
             # We have entered digits but have yet to perform any operation:
             if self.__str_val != "" and self.__str_val_operations == "":
                 # We do not need to eval str_val:
-                float_val = float(self.__str_val)
-                float_val = operation(float_val)
+                val = 0
+                # We don't have a dot point:
+                if "." not in self.__str_val:
+                    val = int(self.__str_val)
+                else:
+                    val = float(self.__str_val)
+                val = operation(val)
 
                 # if we have floating point, get rid of too many digits after dot point:
-                if isinstance(float_val, float) and len(str(float_val)) >= 13:
-                    float_val = terminate_too_many_digits_after_dot(float_val)
+                if isinstance(val, float) and len(str(val)) >= 13:
+                    val = terminate_too_many_digits_after_dot(val)
 
                 # We'll keep the e format information in case there is one:
-                e_format = get_e_format(float_val)
+                e_format = get_e_format(val)
 
                 # If we erased display, we don't change its view:
                 if self.__display_field.text() != "":
                     # Update str_val in order to place it on display:
-                    self.__str_val = str(float_val)
+                    self.__str_val = str(val)
                 else:
                     self.__str_val = ""
 
@@ -376,7 +381,7 @@ class CalcMainWindow(QMainWindow):
                     self.__display_field.setText(self.__str_val)
 
                 # We keep evaluated value in str_val_operations and add new bin_op:
-                self.__str_val_operations = str(float_val)
+                self.__str_val_operations = str(val)
 
                 # But if we have e_format we enter it on operations display with bin_op:
                 if e_format != "":
