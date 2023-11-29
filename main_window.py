@@ -152,7 +152,8 @@ class CalcMainWindow(QMainWindow):
             # Connecting buttons to operations manager and adding shortcuts:
             for button in buttons:
                 button.clicked.connect(self.__manage_clicks)
-                if button.text() in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "+", "-", "=", "/", "x","<-", "C"]:
+                if button.text() in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
+                                     "+", "-", "=", "/", "x", "<-", "C", "."]:
                     if button.text() == "x":
                         button.setShortcut("*")
                     elif button.text() == "<-":
@@ -360,6 +361,8 @@ class CalcMainWindow(QMainWindow):
 
             # We have entered digits but have yet to perform any operation:
             if self.__str_val != "" and self.__str_val_operations == "":
+                # Check for solo dot point:
+                manage_solo_dot()
                 # We do not need to eval str_val:
                 val = 0
                 # We don't have a dot point:
@@ -465,6 +468,8 @@ class CalcMainWindow(QMainWindow):
                     # Str_val_operations remains as it was:
                 # Else we have str_val - perform 1/x on it:
                 else:
+                    # Check for solo dot point:
+                    manage_solo_dot()
                     # Evaluate str_val
                     eval_str = eval(self.__str_val)
                     eval_str = operation(eval_str)
@@ -480,6 +485,12 @@ class CalcMainWindow(QMainWindow):
 
                     # Display it:
                     self.__display_field.setText(self.__str_val)
+
+        # Helper function to manage solely dot appearance before evaluation:
+        def manage_solo_dot() -> None:
+            if self.__str_val[-1] == ".":
+                self.__str_val = self.__str_val[:-1]
+                self.__display_field.setText(self.__str_val)
 
         # Get a button which is a sender of this information:
         sender = self.sender()
@@ -508,18 +519,7 @@ class CalcMainWindow(QMainWindow):
             if "e" not in self.__display_field.text():
                 # if there is something to delete:
                 if len(self.__str_val) > 0:
-                    eval_str = eval(self.__str_val)
-                    # If we have a dot point:
-                    if isinstance(eval_str, float):
-                        # We simply override our string by removing the last char:
-                        self.__str_val = self.__str_val[:-1]
-                        # If we are at a situation that there's only dot point left, with nothing after it,
-                        # we override again:
-                        if self.__str_val[-1] == ".":
-                            self.__str_val = self.__str_val[:-1]
-                    # If we have int, we can just divide using "//" to get rid of the last digit:
-                    else:
-                        self.__str_val = str(eval(self.__str_val) // 10)
+                    self.__str_val = self.__str_val[:-1]
                     # Update display:
                     self.__display_field.setText(self.__str_val)
                     # If we got to plain zero we reset our str_val and start over:
@@ -538,6 +538,8 @@ class CalcMainWindow(QMainWindow):
                         set_displays_after_op_eq(eval_str)
                     # We have 2 values, evaluate regularly:
                     else:
+                        # Check for solo dot point:
+                        manage_solo_dot()
                         # We str_val number to operation:
                         self.__str_val_operations += self.__str_val
                         eval_str = eval(self.__str_val_operations)
@@ -588,6 +590,8 @@ class CalcMainWindow(QMainWindow):
             if len(self.__str_val_operations) == 0:
                 # We have something to draw to operations field:
                 if len(self.__str_val) > 0:
+                    # Check for solo dot point:
+                    manage_solo_dot()
                     # We take input from str_val and add binary operator:
                     self.__str_val_operations += self.__str_val + bin_op
                     self.__operations_field.setText(self.__str_val_operations)
@@ -657,6 +661,8 @@ class CalcMainWindow(QMainWindow):
                 else:
                     # Trying for 0 division error:
                     try:
+                        # Check for solo dot point:
+                        manage_solo_dot()
                         # We get the value from str_val to our operations_val and evaluate:
                         self.__str_val_operations += self.__str_val
                         eval_str = eval(self.__str_val_operations)
@@ -694,7 +700,7 @@ class CalcMainWindow(QMainWindow):
                         handle_zero_division_err()
                     except OverflowError:
                         handle_overflow_err()
-        # Other buttons:
+        # % in sender:
         elif sender.text() == "%":
             pass
         # 1/x, x**2, sqrt(x) in sender:
@@ -719,6 +725,8 @@ class CalcMainWindow(QMainWindow):
                     self.__str_val = self.__str_val[1:]
                 else:
                     self.__str_val = "-" + self.__str_val
+                    val = 0
+                    dot = ""
                     # If there's no dot:
                     if "." not in self.__str_val:
                         # We get int:
@@ -729,14 +737,21 @@ class CalcMainWindow(QMainWindow):
                             val = terminate_too_many_digits(val)
                     # Else - there's dot:
                     else:
-                        # We get float:
-                        val = float(self.__str_val)
+                        # Dot is last, with no following elements:
+                        if self.__str_val[-1] == ".":
+                            # We get number without dot (int) - store dot in another variable:
+                            val = int(self.__str_val[:-1])
+                            dot = "."
+                        else:
+                            # We get float:
+                            val = float(self.__str_val)
 
-                        # If we have too many digits in display (excluding dot)
-                        if len(str(val)) >= 13:
-                            val = terminate_too_many_digits_after_dot(val)
-                    # Set str_val:
-                    self.__str_val = str(val)
+                            # If we have too many digits in display (excluding dot)
+                            if len(str(val)) >= 13:
+                                val = terminate_too_many_digits_after_dot(val)
+
+                    # Set str_val + dot (if there was one):
+                    self.__str_val = str(val) + dot
                 # Display:
                 self.__display_field.setText(self.__str_val)
             # We haven't entered a value:
@@ -779,8 +794,10 @@ class CalcMainWindow(QMainWindow):
                     self.__operations_field.setText(self.__str_val_operations)
         # . in sender:
         elif sender.text() == ".":
-            pass
-
+            # if we entered a value and: there is no dot already, we won't exceed display after adding dot, we don't have e format in display:
+            if self.__str_val != "" and "." not in self.__str_val and len(self.__str_val) <= 11 and "e" not in self.__display_field.text():
+                self.__str_val += "."
+                self.__display_field.setText(self.__str_val)
 
     def draw_plot_window(self):
         print('Plotter opened')
