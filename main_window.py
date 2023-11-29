@@ -1,6 +1,6 @@
 import math
-from typing import Optional, Union
 import sys
+from typing import Optional, Union
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QAction, QFont
 from PyQt6.QtWidgets import (
@@ -149,10 +149,18 @@ class CalcMainWindow(QMainWindow):
             # Getting all buttons:
             buttons = first_line + second_line + third_line + forth_line + fifth_line + sixth_line
 
-            # Connecting buttons to operations manager:
+            # Connecting buttons to operations manager and adding shortcuts:
             for button in buttons:
                 button.clicked.connect(self.__manage_clicks)
-
+                if button.text() in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "+", "-", "=", "/", "x","<-"]:
+                    if button.text() == "x":
+                        button.setShortcut("*")
+                    elif button.text() == "<-":
+                        button.setShortcut(Qt.Key.Key_Backspace)
+                    elif button.text() == "=":
+                        button.setShortcut(Qt.Key.Key_Return)
+                    else:
+                        button.setShortcut(button.text())
             # Gathering all lines and lines layouts:
             all_lines = [first_line, second_line, third_line, forth_line, fifth_line, sixth_line]
             all_layouts = [buttons_layout1, buttons_layout2, buttons_layout3, buttons_layout4, buttons_layout5,
