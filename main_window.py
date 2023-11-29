@@ -152,13 +152,15 @@ class CalcMainWindow(QMainWindow):
             # Connecting buttons to operations manager and adding shortcuts:
             for button in buttons:
                 button.clicked.connect(self.__manage_clicks)
-                if button.text() in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "+", "-", "=", "/", "x","<-"]:
+                if button.text() in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "+", "-", "=", "/", "x","<-", "C"]:
                     if button.text() == "x":
                         button.setShortcut("*")
                     elif button.text() == "<-":
                         button.setShortcut(Qt.Key.Key_Backspace)
                     elif button.text() == "=":
                         button.setShortcut(Qt.Key.Key_Return)
+                    elif button.text() == "C":
+                        button.setShortcut(Qt.Key.Key_Delete)
                     else:
                         button.setShortcut(button.text())
             # Gathering all lines and lines layouts:
@@ -775,6 +777,10 @@ class CalcMainWindow(QMainWindow):
                     self.__display_field.setText(self.__str_val_operations if bin_op == ""
                                                  else self.__str_val_operations[:-1])
                     self.__operations_field.setText(self.__str_val_operations)
+        # . in sender:
+        elif sender.text() == ".":
+            pass
+
 
     def draw_plot_window(self):
         print('Plotter opened')
