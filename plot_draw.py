@@ -258,7 +258,7 @@ class Help_Plot(QWidget):
 
 
 def func_bad_chars(expression):
-    result = re.findall(r'(?!(?:sin|cos|tan|tg|e\^|\b\d|x+\b|\b[\(\)\+\-\*\/\^]\b|x))\b\S+\b', expression)
+    result = re.findall(r'(?!(?:sin|cos|tan|tg|e\^|\d+|[\(\)\+\-\*\/\^]|\dx|x))\b\S+\b', expression)
     return result
 
 
