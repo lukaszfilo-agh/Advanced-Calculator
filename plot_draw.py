@@ -4,7 +4,11 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QWidget,
     QLabel,
-    QMessageBox
+    QMessageBox,
+    QDialog, 
+    QLineEdit, 
+    QDialogButtonBox, 
+    QFormLayout
 )
 from PyQt6 import QtWidgets
 import numpy as np
@@ -100,54 +104,54 @@ class PlotWindow(QWidget):
 
     # Function for drawing plots
     def draw_plot(self):
-        # Getting function
-        function_str, done1 = QtWidgets.QInputDialog.getText(
-            self, 'Function', 'f(x):')
-
         try:
+            dialog_data = InputDialog()
+            dialog_data.exec()
+
+            function_str, lim1, lim2 = dialog_data.getInputs()
+
+            if len(function_str) == 0 or len(lim1) == 0 or len(lim2) == 0:
+                raise InputError
+
             # Checking for illegal charaters
             invalid_chars = func_bad_chars(function_str)
             if len(invalid_chars) != 0:
                 raise InvalidCharacters
-
-            # Getting lower limit
-            lim1, done2 = QtWidgets.QInputDialog.getDouble(
-                self, 'Lower limit', 'Enter lower limit:')
-
-            # Getting upper limit
-            lim2, done3 = QtWidgets.QInputDialog.getDouble(
-                self, 'Upper limit', 'Enter upper limit:')
+            
+            # Conversion of lim1 and lim2
+            lim1 = float(lim1)
+            lim2 = float(lim2)
 
             # Checking for limit error
             if lim1 > lim2:
                 raise LimError
 
-            # Drawing plot with entered data
-            if done1 and done2 and done3:
+            # Creating vector with x values
+            xvals = np.arange(lim1, lim2, 0.01)
 
-                # Creating vector with x values
-                xvals = np.arange(lim1, lim2, 0.01)
+            # Creating expression for eval
+            function_math = convert_func_math(function_str)
 
-                # Creating expression for eval
-                function_math = convert_func_math(function_str)
+            # Defining lambda function
+            def fx(x): return eval(function_math)
 
-                # Defining lambda function
-                def fx(x): return eval(function_math)
+            # Calculating values for function
+            yvals = fx(xvals)
 
-                # Calculating values for function
-                yvals = fx(xvals)
+            # Drawing plot
+            self.canvas.axes.plot(xvals, yvals)
+            # Showing grid
+            self.canvas.axes.grid(True)
+            # Setting title
+            self.canvas.axes.set_title(f'$f(x) = {function_str}$')
+            # Adding bolded x and y axis
+            self.canvas.axes.axhline(0, color='black', linewidth=1)
+            self.canvas.axes.axvline(0, color='black', linewidth=1)
+            # Displaying plot
+            self.canvas.draw()
 
-                # Drawing plot
-                self.canvas.axes.plot(xvals, yvals)
-                # Showing grid
-                self.canvas.axes.grid(True)
-                # Setting title
-                self.canvas.axes.set_title(f'$f(x) = {function_str}$')
-                # Adding bolded x and y axis
-                self.canvas.axes.axhline(0, color='black', linewidth=1)
-                self.canvas.axes.axvline(0, color='black', linewidth=1)
-                # Displaying plot
-                self.canvas.draw()
+        except InputError:
+            self.error_window('Entered data cannot be empty')
 
         # Catching errors for invalid chars
         except InvalidCharacters:
@@ -193,6 +197,30 @@ class PlotWindow(QWidget):
     def show_help(self):
         self.help_window.show()
 
+class InputDialog(QDialog):
+    def __init__(self):
+        super().__init__()
+        
+        buttonBox = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel, self)
+        layout = QFormLayout(self)
+        # labels = ['f(x):', 'Lower limit:', 'Upper limit:']
+        # self.inputs = []
+        # for lab in labels:
+        #     self.inputs.append(QLineEdit(self))
+        #     layout.addRow(lab, self.inputs[-1])
+        
+        self.inputs = [QLineEdit(self), QLineEdit(self), QLineEdit(self)]
+        layout.addRow('f(x): ', self.inputs[0])
+        layout.addRow('Lower limit: ', self.inputs[1])
+        layout.addRow('Upper limit: ', self.inputs[2])
+
+        layout.addWidget(buttonBox)
+        
+        buttonBox.accepted.connect(self.accept)
+        buttonBox.rejected.connect(self.reject)
+    
+    def getInputs(self):
+        return tuple(input.text() for input in self.inputs)
 
 class Help_Plot(QWidget):
     def __init__(self):
@@ -230,8 +258,7 @@ class Help_Plot(QWidget):
 
 
 def func_bad_chars(expression):
-    result = re.findall(r'(?!(?:sin|cos|e\^|\b\d|x+\b|\b[\(\)\+\-\*\/\^]\b|x))\b\S+\b', expression)
-    
+    result = re.findall(r'(?!(?:sin|cos|tan|tg|e\^|\b\d|x+\b|\b[\(\)\+\-\*\/\^]\b|x))\b\S+\b', expression)
     return result
 
 
@@ -280,4 +307,8 @@ class InvalidCharacters(Exception):
 
 class LimError(Exception):
     "Raised when lim1 > lim2"
+    pass
+
+class InputError(Exception):
+    "Raised when data input is NULL"
     pass
