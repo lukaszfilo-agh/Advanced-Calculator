@@ -168,8 +168,9 @@ class PlotWindow(QWidget):
         # Setting title
         self.canvas.axes.set_title(f'$f(x) = {function_str}$')
         # Adding bolded x and y axis
-        self.canvas.axes.axhline(0, color='black', linewidth=1)
-        self.canvas.axes.axvline(0, color='black', linewidth=1)
+        if lim2 > 0 and lim1 < 0:
+            self.canvas.axes.axhline(0, color='black', linewidth=1)
+            self.canvas.axes.axvline(0, color='black', linewidth=1)
         # Setting lims for x axis
         # self.canvas.axes.set_xlim((lim1, lim2))
         # self.canvas.axes.set_ylim((fx(lim1), fx(lim2)))
@@ -218,7 +219,7 @@ class InputDialog2(QDialog):
         # Setting window title
         self.setWindowTitle('Wprowadź wzór funkcji')
         # Setting window size
-        self.resize(400, 200)
+        self.resize(500, 500)
 
         # Creating main layout
         main_layout = QVBoxLayout()
@@ -245,42 +246,45 @@ class InputDialog2(QDialog):
         # Creating keyboards
         self.keyboards = [
             [  # Keyboard for function
-                ['1', '2', '3', 'sin( )', 'cos( )'],
-                ['4', '5', '6', 'tg( )', 'ctg( )'],
-                ['7', '8', '9', '^', '.'],
-                ['0', '( )', '| |', 'e', 'x'],
-                ['<-', '->', 'C', 'OK', 'PH']
+                ['1', '2', '3', '*', '/', 'sin( )', 'cos( )'],
+                ['4', '5', '6', '+', '-', 'tg( )', 'ctg( )'],
+                ['7', '8', '9', '=', '^', 'arcsin( )', 'arccos()'],
+                ['0', 'x', '( )', '| |', 'e', 'arctg( )', 'arcctg( )'],
+                ['<', '>', '<-', 'C']
             ],
             [  # Keyboard for lower limit
                 ['1', '2', '3', '4'],
                 ['5', '6', '7', '8'],
-                ['9', '0', '.', 'pi'],
-                ['<-', '->', 'C', 'OK']
+                ['9', '0', '.', '-'],
+                ['pi', '<-', '->', 'C']
             ],
             [  # Keyboard for upper limit
                 ['1', '2', '3', '4'],
                 ['5', '6', '7', '8'],
-                ['9', '0', '.', 'pi'],
-                ['<-', '->', 'C', 'OK']
+                ['9', '0', '.', '-'],
+                ['pi', '<-', '->', 'C']
             ]
         ]
 
-        # Setting active keyboard
-        self.active_keyboard = 0
-
         # Creating buttons for changing input fields
-        switch_func_button = QPushButton('f(x)')
-        switch_lower_limit = QPushButton('Lower limit')
-        switch_upper_limit = QPushButton('Upper limit')
+        button_func_field = QPushButton('f(x)')
+        button_lower_limit_field = QPushButton('Lower limit')
+        button_upper_limit_field = QPushButton('Upper limit')
+        button_draw_plot = QPushButton('Draw plot')
 
-        switch_func_button.clicked.connect(self.switch_func_keyboard)
-        switch_lower_limit.clicked.connect(self.switch_lower_lim_keyboard)
-        switch_upper_limit.clicked.connect(self.switch_upper_lim_keyboard)
+        button_func_field.clicked.connect(self.switch_func_keyboard)
+        button_lower_limit_field.clicked.connect(self.switch_lower_lim_keyboard)
+        button_upper_limit_field.clicked.connect(self.switch_upper_lim_keyboard)
+        button_draw_plot.clicked.connect(self.accept)
+
+        button_draw_plot.setShortcut(Qt.Key.Key_Return)
+
         
         # Adding buttons to layout
-        main_layout.addWidget(switch_func_button)
-        main_layout.addWidget(switch_lower_limit)
-        main_layout.addWidget(switch_upper_limit)
+        main_layout.addWidget(button_func_field)
+        main_layout.addWidget(button_lower_limit_field)
+        main_layout.addWidget(button_upper_limit_field)
+        main_layout.addWidget(button_draw_plot)
 
         # Setting main_layout as dialog layout
         self.setLayout(main_layout)
@@ -332,42 +336,23 @@ class InputDialog2(QDialog):
             row_layout = QHBoxLayout()
             for button_text in row:
                 button = QPushButton(button_text)
+                button.setFixedSize(100, 40)
                 button.clicked.connect(self.on_button_clicked)
                 row_layout.addWidget(button)
             self.buttons_layout.addLayout(row_layout)
+    
+    def getInputs(self):
+        return tuple(input.text() for input in self.input_fields)
 
 class CustomLineEdit(QLineEdit):
     def __init__(self):
         super().__init__()
 
     def keyPressEvent(self, event):
-        if event.text().isdigit() or event.key() == 16777219:  # 16777219 to kod klawisza Backspace
+        allowed_keys = [Qt.Key.Key_Backspace, Qt.Key.Key_Left, Qt.Key.Key_Right, Qt.Key.Key_X, Qt.Key.Key_Minus]
+        if event.text().isdigit() or event.key() in allowed_keys:
             super().keyPressEvent(event)
 
-class InputDialog(QDialog):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle("Input data")
-        buttonBox = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel, self)
-        layout = QFormLayout(self)
-        # labels = ['f(x):', 'Lower limit:', 'Upper limit:']
-        # self.inputs = []
-        # for lab in labels:
-        #     self.inputs.append(QLineEdit(self))
-        #     layout.addRow(lab, self.inputs[-1])
-        
-        self.inputs = [QLineEdit(self), QLineEdit(self), QLineEdit(self)]
-        layout.addRow('f(x): ', self.inputs[0])
-        layout.addRow('Lower limit: ', self.inputs[1])
-        layout.addRow('Upper limit: ', self.inputs[2])
-
-        layout.addWidget(buttonBox)
-        
-        buttonBox.accepted.connect(self.accept)
-        buttonBox.rejected.connect(self.reject)
-    
-    def getInputs(self):
-        return tuple(input.text() for input in self.inputs)
 
 class Help_Plot(QWidget):
     def __init__(self):
