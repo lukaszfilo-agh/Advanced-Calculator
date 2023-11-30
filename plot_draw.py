@@ -11,7 +11,7 @@ from PyQt6.QtWidgets import (
     QFormLayout
 )
 from PyQt6.QtCore import QRegularExpression, Qt
-from PyQt6.QtGui import QRegularExpressionValidator, QKeyEvent
+from PyQt6.QtGui import QRegularExpressionValidator, QKeyEvent, QShortcut, QKeySequence
 import numpy as np
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import (
@@ -91,6 +91,10 @@ class PlotWindow(QWidget):
 
         # Setting layout for window
         self.setLayout(main_layout)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key.Key_Escape:
+            print('KURWA')
 
     # Function for going back to main menu
     def back_to_menu(self):
@@ -291,6 +295,13 @@ class InputDialog2(QDialog):
 
         self.active_field = 0
         self.update_keyboard()
+
+    def keyPressEvent(self, event):
+        if event.key() == int(Qt.Key.Key_Tab):
+            self.label.setText("Wciśnięto klawisz TAB!")
+            # Możesz dodać tu inne działania po wciśnięciu TAB
+
+        super().keyPressEvent(event)
 
     def switch_func_keyboard(self):
         self.active_field = 0
