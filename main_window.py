@@ -15,6 +15,8 @@ from PyQt6.QtWidgets import (
     QStatusBar
 )
 
+from plot_draw import PlotWindow
+
 # Window size:
 WINDOW_WIDTH = 400
 WINDOW_HEIGHT = 600
@@ -24,6 +26,8 @@ MAX_DIGITS = 13
 
 
 # Subclass QMainWindow application main window
+
+
 class CalcMainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -873,6 +877,9 @@ class CalcMainWindow(QMainWindow):
                 self.__display_field.setText(self.__str_val)
 
     def draw_plot_window(self):
+        self.plot_window = PlotWindow(self)
+        self.plot_window.show()
+        self.hide()
         print('Plotter opened')
 
     def sample_button_click(self, s):
@@ -888,6 +895,7 @@ class CalcMainWindow(QMainWindow):
 
         qr.moveCenter(cp)
         self.move(qr.topLeft())
+
 
 
 def main():
