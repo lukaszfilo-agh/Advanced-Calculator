@@ -509,9 +509,7 @@ class CalcMainWindow(QMainWindow):
 
         # Function managing appearing of dot point always after "/" and sqrt(x) even if it's not needed:
         def manage_immediate_dot_point_after_eval(num: Union[int, float]) -> Union[int, float]:
-            print(num)
             if isinstance(num, float):
-                print(int(num), num)
                 if int(num) == num:
                     return int(num)
             return num
