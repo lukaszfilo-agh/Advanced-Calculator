@@ -248,18 +248,23 @@ class InputDialog2(QDialog):
         # Creating keyboards
         self.keyboards = [
             [  # Keyboard for function
-                ['7', '8', '9', '/'],
-                ['4', '5', '6', '*'],
-                ['1', '2', '3', '-'],
-                ['0', '.', '=', '+'],
-                ['(', ')', 'C', 'OK']
+                ['1', '2', '3', 'sin( )', 'cos( )'],
+                ['4', '5', '6', 'tg( )', 'ctg( )'],
+                ['7', '8', '9', '^', '.'],
+                ['0', '( )', '| |', 'e', 'x'],
+                ['<-', '->', 'C', 'OK', 'PH']
             ],
-            [  # Klawiatura keyboard for limits
-                ['1', '2', '3'],
-                ['4', '5', '6'],
-                ['7', '8', '9'],
-                ['0', '.', 'C'],
-                ['(', ')', 'OK']
+            [  # Keyboard for lower limit
+                ['1', '2', '3', '4'],
+                ['5', '6', '7', '8'],
+                ['9', '0', '.', 'pi'],
+                ['<-', '->', 'C', 'OK']
+            ],
+            [  # Keyboard for upper limit
+                ['1', '2', '3', '4'],
+                ['5', '6', '7', '8'],
+                ['9', '0', '.', 'pi'],
+                ['<-', '->', 'C', 'OK']
             ]
         ]
 
@@ -268,16 +273,17 @@ class InputDialog2(QDialog):
 
         # Creating buttons for changing input fields
         switch_func_button = QPushButton('f(x)')
-        # switch_func_button.clicked.connect(self.on_switch_button_clicked(0))
-        switch_upper_limit = QPushButton('Lower limit')
-        # switch_upper_limit.clicked.connect(self.on_switch_button_clicked(1))
-        switch_lower_limit = QPushButton('Upper limit')
-        # switch_lower_limit.clicked.connect(self.on_switch_button_clicked(2))
+        switch_lower_limit = QPushButton('Lower limit')
+        switch_upper_limit = QPushButton('Upper limit')
 
+        switch_func_button.clicked.connect(self.switch_func_keyboard)
+        switch_lower_limit.clicked.connect(self.switch_lower_lim_keyboard)
+        switch_upper_limit.clicked.connect(self.switch_upper_lim_keyboard)
+        
         # Adding buttons to layout
         main_layout.addWidget(switch_func_button)
-        main_layout.addWidget(switch_upper_limit)
         main_layout.addWidget(switch_lower_limit)
+        main_layout.addWidget(switch_upper_limit)
 
         # Setting main_layout as dialog layout
         self.setLayout(main_layout)
@@ -285,15 +291,53 @@ class InputDialog2(QDialog):
         self.active_field = 0
         self.update_keyboard()
 
-    def on_switch_button_clicked(self, idx):
-        self.active_field = idx
+    def switch_func_keyboard(self):
+        self.active_field = 0
+        self.update_keyboard()
+    
+    def switch_lower_lim_keyboard(self):
+        self.active_field = 1
+        self.update_keyboard()
+    
+    def switch_upper_lim_keyboard(self):
+        self.active_field = 2
         self.update_keyboard()
 
     def on_button_clicked(self):
-        pass
+        clicked_button = self.sender()
+        text = clicked_button.text()
+
+        if text == 'C':
+            self.input_fields[self.active_field].clear()
+        elif text == 'OK':
+            expression = self.input_fields[self.active_field].text()
+            print(f'Wprowadzona wartość pola {self.active_field + 1}: {expression}')
+            self.active_field = (self.active_field + 1) % len(self.input_fields)
+            self.update_keyboard()
+        elif text == '=':
+            pass
+        else:
+            current_text = self.input_fields[self.active_field].text()
+            new_text = current_text + text
+            self.input_fields[self.active_field].setText(new_text)
 
     def update_keyboard(self):
-        pass
+        # Deleting buttons
+        for i in reversed(range(self.buttons_layout.count())):
+            layout = self.buttons_layout.itemAt(i).layout()
+            if layout is not None:
+                for j in reversed(range(layout.count())):
+                    layout.itemAt(j).widget().deleteLater()
+                self.buttons_layout.removeItem(layout)
+
+        # Adding buttons
+        for row in self.keyboards[self.active_field]:
+            row_layout = QHBoxLayout()
+            for button_text in row:
+                button = QPushButton(button_text)
+                button.clicked.connect(self.on_button_clicked)
+                row_layout.addWidget(button)
+            self.buttons_layout.addLayout(row_layout)
 
 class InputDialog(QDialog):
     def __init__(self):
