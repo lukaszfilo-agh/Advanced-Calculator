@@ -26,8 +26,6 @@ MAX_DIGITS = 13
 
 
 # Subclass QMainWindow application main window
-
-
 class CalcMainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -206,12 +204,12 @@ class CalcMainWindow(QMainWindow):
             # Sample button:
             sample_button = QAction("&Sample button", self)
             sample_button.setStatusTip("This is Sample button")
-            sample_button.triggered.connect(self.sample_button_click)
+            sample_button.triggered.connect(self.__sample_button_click)
 
             # Plot calc button:
             plot_calc_button = QAction("&Draw plot", self)
             plot_calc_button.setStatusTip("Open plot calc")
-            plot_calc_button.triggered.connect(self.draw_plot_window)
+            plot_calc_button.triggered.connect(self.__draw_plot_window)
 
             # Exit Button:
             exit_button = QAction("&Quit", self)
@@ -876,13 +874,13 @@ class CalcMainWindow(QMainWindow):
                 self.__str_val += "."
                 self.__display_field.setText(self.__str_val)
 
-    def draw_plot_window(self):
+    def __draw_plot_window(self):
         self.plot_window = PlotWindow(self)
         self.plot_window.show()
         self.hide()
         print('Plotter opened')
 
-    def sample_button_click(self, s):
+    def __sample_button_click(self, s):
         print('button clicked')
 
     def quit_app(self):
@@ -897,13 +895,9 @@ class CalcMainWindow(QMainWindow):
         self.move(qr.topLeft())
 
 
-
-def main():
+# Running main program:
+def run() -> None:
     calc_app = QApplication(sys.argv)
     main_w = CalcMainWindow()
     main_w.show()
     sys.exit(calc_app.exec())
-
-
-if __name__ == "__main__":
-    main()
