@@ -10,7 +10,7 @@ from PyQt6.QtWidgets import (
     QDialogButtonBox, 
     QFormLayout
 )
-from PyQt6.QtCore import QRegularExpression, Qt
+from PyQt6.QtCore import QRegularExpression, Qt, QEvent
 from PyQt6.QtGui import QRegularExpressionValidator, QKeyEvent, QShortcut, QKeySequence
 import numpy as np
 from matplotlib.figure import Figure
@@ -92,9 +92,6 @@ class PlotWindow(QWidget):
         # Setting layout for window
         self.setLayout(main_layout)
 
-    def keyPressEvent(self, event):
-        if event.key() == Qt.Key.Key_Escape:
-            print('KURWA')
 
     # Function for going back to main menu
     def back_to_menu(self):
@@ -238,11 +235,14 @@ class InputDialog2(QDialog):
         # Input fields labels
         labels_text = ['f(x):', 'Lower limit:', 'Upper limit']
 
+        self.input_fields[0].installEventFilter(self)
+        self.input_fields[1].installEventFilter(self)
+        self.input_fields[2].installEventFilter(self)
+
         for i in range(len(self.input_fields)):
             label = QLabel(labels_text[i])
             main_layout.addWidget(label)
             main_layout.addWidget(self.input_fields[i])
-
 
         self.buttons_layout = QVBoxLayout()
         main_layout.addLayout(self.buttons_layout)
@@ -296,12 +296,16 @@ class InputDialog2(QDialog):
         self.active_field = 0
         self.update_keyboard()
 
-    def keyPressEvent(self, event):
-        if event.key() == int(Qt.Key.Key_Tab):
-            self.label.setText("Wciśnięto klawisz TAB!")
-            # Możesz dodać tu inne działania po wciśnięciu TAB
-
-        super().keyPressEvent(event)
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.Type.KeyPress and obj in self.input_fields:
+            if event.key() == Qt.Key.Key_Tab:
+                active_index = self.input_fields.index(obj)
+                if active_index == 2:
+                    self.active_field = 0
+                else:
+                    self.active_field = active_index + 1
+            self.update_keyboard()
+        return super().eventFilter(obj, event)
 
     def switch_func_keyboard(self):
         self.active_field = 0
@@ -358,8 +362,14 @@ class InputDialog2(QDialog):
 class CustomLineEdit(QLineEdit):
     def __init__(self):
         super().__init__()
+    
+    def check_active_field(self):
+        active_widget = self.focusWidget()
+        print(active_widget)
+        return active_widget
 
     def keyPressEvent(self, event):
+        # self.check_active_field()
         allowed_keys = [Qt.Key.Key_Backspace, Qt.Key.Key_Left, Qt.Key.Key_Right, Qt.Key.Key_X, Qt.Key.Key_Minus]
         if event.text().isdigit() or event.key() in allowed_keys:
             super().keyPressEvent(event)
