@@ -223,7 +223,7 @@ class InputDialog(QDialog):
 
     def init_ui(self):
         # Setting window title
-        self.setWindowTitle('Wprowadź wzór funkcji')
+        self.setWindowTitle('Enter Data')
         # Setting window size
         self.resize(500, 500)
 
@@ -256,23 +256,20 @@ class InputDialog(QDialog):
         # Creating keyboards
         self.keyboards = [
             [  # Keyboard for function
-                ['1', '2', '3', '*', '/', 'sin( )', 'cos( )'],
-                ['4', '5', '6', '+', '-', 'tg( )', 'ctg( )'],
-                ['7', '8', '9', '=', '^', 'arcsin( )', 'arccos()'],
-                ['0', 'x', '( )', '| |', 'e', 'arctg( )', 'arcctg( )'],
+                ['*', '/', 'sin()', 'cos()'],
+                ['+', '-', 'tg()', 'ctg()'],
+                ['=', '^', 'arcsin()', 'arccos()'],
+                ['(', ')', 'arctg()', 'arcctg()'],
+                ['x', 'e', '| |', 'sqrt()'],
                 ['<', '>', '<-', 'C']
             ],
             [  # Keyboard for lower limit
-                ['1', '2', '3', '4'],
-                ['5', '6', '7', '8'],
-                ['9', '0', '.', '-'],
-                ['pi', '<-', '->', 'C']
+                ['+', '-', '.', 'pi'],
+                ['<', '>', '<-', 'C']
             ],
             [  # Keyboard for upper limit
-                ['1', '2', '3', '4'],
-                ['5', '6', '7', '8'],
-                ['9', '0', '.', '-'],
-                ['pi', '<-', '->', 'C']
+                ['+', '-', '.', 'pi'],
+                ['<', '>', '<-', 'C']
             ]
         ]
 
@@ -373,14 +370,8 @@ class InputDialog(QDialog):
 class CustomLineEdit(QLineEdit):
     def __init__(self):
         super().__init__()
-    
-    def check_active_field(self):
-        active_widget = self.focusWidget()
-        print(active_widget)
-        return active_widget
 
     def keyPressEvent(self, event):
-        # self.check_active_field()
         allowed_keys = [Qt.Key.Key_Backspace, 
                         Qt.Key.Key_Left, 
                         Qt.Key.Key_Right, 
