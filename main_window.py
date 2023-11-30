@@ -79,10 +79,13 @@ class CalcMainWindow(QMainWindow):
             buttons_layout4 = QHBoxLayout()
             buttons_layout5 = QHBoxLayout()
             buttons_layout6 = QHBoxLayout()
+            buttons_layout7 = QHBoxLayout()
 
             # First line:
-            button_percent = QPushButton("%", self)
-            button_percent.setFont(font)
+            button_pi = QPushButton("π", self)
+            button_pi.setFont(font)
+            button_e = QPushButton("e", self)
+            button_e.setFont(font)
             button_CE = QPushButton("CE", self)
             button_CE.setFont(font)
             button_C = QPushButton("C", self)
@@ -90,9 +93,25 @@ class CalcMainWindow(QMainWindow):
             button_rem = QPushButton("<-", self)
             button_rem.setFont(font)
 
-            first_line = [button_percent, button_CE, button_C, button_rem]
+            first_line = [button_pi, button_e, button_CE, button_C, button_rem]
 
             # Second line:
+            button_ln = QPushButton("ln", self)
+            button_ln.setFont(font)
+            button_exp = QPushButton("e^x", self)
+            button_exp.setFont(font)
+            button_fac = QPushButton("n!", self)
+            button_fac.setFont(font)
+            button_abs = QPushButton("|x|", self)
+            button_abs.setFont(font)
+            button_mod = QPushButton("mod", self)
+            button_mod.setFont(font)
+
+            second_line = [button_ln, button_exp, button_fac, button_abs, button_mod]
+
+            # Third line:
+            button_log = QPushButton("log", self)
+            button_log.setFont(font)
             button_measurable = QPushButton("1/x", self)
             button_measurable.setFont(font)
             button_squared = QPushButton("x**2", self)
@@ -102,9 +121,11 @@ class CalcMainWindow(QMainWindow):
             button_div = QPushButton("/", self)
             button_div.setFont(font)
 
-            second_line = [button_measurable, button_squared, button_sq_root, button_div]
+            third_line = [button_log, button_measurable, button_squared, button_sq_root, button_div]
 
-            # Third line:
+            # Forth line:
+            button_x_y = QPushButton("x^y", self)
+            button_x_y.setFont(font)
             button_7 = QPushButton("7", self)
             button_7.setFont(font)
             button_8 = QPushButton("8", self)
@@ -114,9 +135,11 @@ class CalcMainWindow(QMainWindow):
             button_x = QPushButton("x", self)
             button_x.setFont(font)
 
-            third_line = [button_7, button_8, button_9, button_x]
+            forth_line = [button_x_y, button_7, button_8, button_9, button_x]
 
-            # Forth line:
+            # Fifth line:
+            button_x_sqrt_y = QPushButton("x_sqrt(y)", self)
+            button_x_sqrt_y.setFont(font)
             button_4 = QPushButton("4", self)
             button_4.setFont(font)
             button_5 = QPushButton("5", self)
@@ -126,9 +149,11 @@ class CalcMainWindow(QMainWindow):
             button_minus = QPushButton("-", self)
             button_minus.setFont(font)
 
-            forth_line = [button_4, button_5, button_6, button_minus]
+            fifth_line = [button_x_sqrt_y, button_4, button_5, button_6, button_minus]
 
-            # Fifth line:
+            # Sixth line:
+            button_10x = QPushButton("10^x", self)
+            button_10x.setFont(font)
             button_1 = QPushButton("1", self)
             button_1.setFont(font)
             button_2 = QPushButton("2", self)
@@ -138,9 +163,11 @@ class CalcMainWindow(QMainWindow):
             button_plus = QPushButton("+", self)
             button_plus.setFont(font)
 
-            fifth_line = [button_1, button_2, button_3, button_plus]
+            sixth_line = [button_10x, button_1, button_2, button_3, button_plus]
 
-            # Sixth line:
+            # Seventh line:
+            button_logy_x = QPushButton("logy(x)", self)
+            button_logy_x.setFont(font)
             button_plus_minus = QPushButton("+/-", self)
             button_plus_minus.setFont(font)
             button_0 = QPushButton("0", self)
@@ -150,10 +177,10 @@ class CalcMainWindow(QMainWindow):
             button_eq = QPushButton("=", self)
             button_eq.setFont(font)
 
-            sixth_line = [button_plus_minus, button_0, button_dot, button_eq]
+            seventh_line = [button_logy_x, button_plus_minus, button_0, button_dot, button_eq]
 
             # Getting all buttons:
-            buttons = first_line + second_line + third_line + forth_line + fifth_line + sixth_line
+            buttons = first_line + second_line + third_line + forth_line + fifth_line + sixth_line + seventh_line
 
             # Connecting buttons to operations manager and adding shortcuts:
             for button in buttons:
@@ -171,12 +198,12 @@ class CalcMainWindow(QMainWindow):
                     else:
                         button.setShortcut(button.text())
             # Gathering all lines and lines layouts:
-            all_lines = [first_line, second_line, third_line, forth_line, fifth_line, sixth_line]
+            all_lines = [first_line, second_line, third_line, forth_line, fifth_line, sixth_line, seventh_line]
             all_layouts = [buttons_layout1, buttons_layout2, buttons_layout3, buttons_layout4, buttons_layout5,
-                           buttons_layout6]
+                           buttons_layout6, buttons_layout7]
 
             for i in range(len(all_lines)):
-                for j in range(4):
+                for j in range(5):
                     all_layouts[i].addWidget(all_lines[i][j])
                 general_layout.addLayout(all_layouts[i])
             return general_layout
@@ -284,7 +311,7 @@ class CalcMainWindow(QMainWindow):
                 e_format = change_format_for_large_nums(num)
 
                 # Block too small e:
-                if int(e_format[-2:]) < 11:
+                if 1e-8 < num < 1e11:
                     return ""
 
                 # if we take too much display space with e format:
@@ -355,8 +382,8 @@ class CalcMainWindow(QMainWindow):
             self.__str_val = ""
             self.__str_val_operations = ""
 
-        # Helper function managing 3 button clicks based on their function:
-        def manage_1_over_x_sq_sqrt(button_name: str) -> None:
+        # Helper function managing unary functions on buttons:
+        def manage_unary_operators(button_name: str) -> None:
             operation = None
             if button_name == "1/x":
                 operation = lambda x: 1/x
@@ -364,7 +391,19 @@ class CalcMainWindow(QMainWindow):
                 operation = lambda x: x**2
             elif button_name == "sqrt(x)":
                 operation = lambda x: math.sqrt(x)
-                
+            elif button_name == "|x|":
+                operation = lambda x: abs(x)
+            elif button_name == "n!":
+                operation = lambda x: math.gamma(x + 1)
+            elif button_name == "e^x":
+                operation = lambda x: math.exp(x)
+            elif button_name == "ln":
+                operation = lambda x: math.log(x)
+            elif button_name == "log":
+                operation = lambda x: math.log10(x)
+            elif button_name == "10^x":
+                operation = lambda x: 10**x
+
             # We have entered digits but have yet to perform any operation:
             if self.__str_val != "" and self.__str_val_operations == "":
                 # Check for solo dot point:
@@ -376,11 +415,11 @@ class CalcMainWindow(QMainWindow):
                     val = int(self.__str_val)
                 else:
                     val = float(self.__str_val)
+
                 val = operation(val)
 
-                if button_name == "sqrt(x)":
-                    # Protection against adding dot point even when it's not necessary:
-                    val = manage_immediate_dot_point_after_eval(val)
+                # Protecting against unnecessary parsing:
+                val = manage_immediate_dot_point_after_eval(val)
 
                 # if we have floating point, get rid of too many digits after dot point:
                 if isinstance(val, float) and len(str(val)) >= MAX_DIGITS:
@@ -422,9 +461,8 @@ class CalcMainWindow(QMainWindow):
                 eval_str = eval(self.__str_val_operations)
                 eval_str = operation(eval_str)
 
-                if button_name == "sqrt(x)":
-                    # Protection against adding dot point even when it's not necessary:
-                    eval_str = manage_immediate_dot_point_after_eval(eval_str)
+                # Protecting against unnecessary parsing:
+                eval_str = manage_immediate_dot_point_after_eval(eval_str)
 
                 # if we have floating point, get rid of too many digits after dot point:
                 if isinstance(eval_str, float) and len(str(eval_str)) >= MAX_DIGITS:
@@ -465,9 +503,8 @@ class CalcMainWindow(QMainWindow):
                     eval_str = eval(self.__str_val_operations[:-1])
                     eval_str = operation(eval_str)
 
-                    if button_name == "sqrt(x)":
-                        # Protection against adding dot point even when it's not necessary:
-                        eval_str = manage_immediate_dot_point_after_eval(eval_str)
+                    # Protecting against unnecessary parsing:
+                    eval_str = manage_immediate_dot_point_after_eval(eval_str)
 
                     # if we have floating point, get rid of too many digits after dot point:
                     if isinstance(eval_str, float) and len(str(eval_str)) >= MAX_DIGITS:
@@ -740,16 +777,13 @@ class CalcMainWindow(QMainWindow):
                         handle_zero_division_err()
                     except OverflowError:
                         handle_overflow_err()
-        # % in sender:
-        elif sender.text() == "%":
-            pass
-        # 1/x, x**2, sqrt(x) in sender:
-        elif sender.text() in ["1/x", "x**2", "sqrt(x)"]:
+        # Unary operators:
+        elif sender.text() in ["1/x", "x**2", "sqrt(x)", "|x|", "n!", "e^x", "ln", "log", "10^x"]:
             # Protect against trying to do operation over string:
             if self.__display_field.text() not in ["ZERO DIVISION", "INVALID INPUT", "INF"]:
                 # Trying for zero division and sqrt of negative values:
                 try:
-                    manage_1_over_x_sq_sqrt(sender.text())
+                    manage_unary_operators(sender.text())
                 except ZeroDivisionError:
                     handle_zero_division_err()
                 except ValueError:
