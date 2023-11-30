@@ -870,7 +870,7 @@ class CalcMainWindow(QMainWindow):
         # . in sender:
         elif sender.text() == ".":
             # if we entered a value and: there is no dot already, we won't exceed display after adding dot, we don't have e format in display:
-            if self.__str_val != "" and "." not in self.__str_val and len(self.__str_val) <= 11 and "e" not in self.__display_field.text():
+            if self.__str_val != "" and "." not in self.__str_val and len(self.__str_val) <= MAX_DIGITS - 2 and "e" not in self.__display_field.text():
                 self.__str_val += "."
                 self.__display_field.setText(self.__str_val)
 
