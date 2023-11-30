@@ -15,8 +15,12 @@ from PyQt6.QtWidgets import (
     QStatusBar
 )
 
+# Window size:
 WINDOW_WIDTH = 400
 WINDOW_HEIGHT = 600
+
+# Max number of digits in display:
+MAX_DIGITS = 13
 
 
 # Subclass QMainWindow application main window
@@ -248,20 +252,20 @@ class CalcMainWindow(QMainWindow):
                 idx_dot_point = str(num).index(".")
 
                 # Rounding to max possible digits:
-                rounding_to = 13 - idx_dot_point - 1
+                rounding_to = MAX_DIGITS - idx_dot_point - 1
 
                 return round(num, rounding_to)
             # if we have str - e format value:
             idx_dot_point = num.index(".")
 
             # Rounding to max possible digits including e format length:
-            rounding_to = 13 - idx_dot_point - 1 - len(e)
+            rounding_to = MAX_DIGITS - idx_dot_point - 1 - len(e)
 
             return str(round(float(num), rounding_to))
 
         # Helper function which rounds if there are too many digits in display after adding minus:
         def terminate_too_many_digits(num: int) -> int:
-            rounding_to = 13
+            rounding_to = MAX_DIGITS
             return round(num, rounding_to)
 
         # Helper function which changes number to string e notation:
@@ -273,7 +277,7 @@ class CalcMainWindow(QMainWindow):
             e_format = ""
 
             # Fixing overflow after evaluation, we block immediate e format application to small numbers:
-            if len(str(num)) >= 13 and abs(num) > 1:
+            if len(str(num)) >= MAX_DIGITS and abs(num) > 1:
 
                 e_format = change_format_for_large_nums(num)
 
@@ -282,7 +286,7 @@ class CalcMainWindow(QMainWindow):
                     return ""
 
                 # if we take too much display space with e format:
-                if len(e_format) >= 13:
+                if len(e_format) >= MAX_DIGITS:
                     # We get the position of e - beginning of our format:
                     e_ind = e_format.index("e")
 
@@ -300,7 +304,7 @@ class CalcMainWindow(QMainWindow):
         # Helper function which reoccurs in different cases of "=" operator:
         def set_displays_after_op_eq(value: float) -> None:
             # if we have floating point, get rid of too many digits after dot point:
-            if isinstance(value, float) and len(str(value)) >= 13:
+            if isinstance(value, float) and len(str(value)) >= MAX_DIGITS:
                 value = terminate_too_many_digits_after_dot(value)
 
             # We'll keep the e format information in case there is one:
@@ -377,7 +381,7 @@ class CalcMainWindow(QMainWindow):
                     val = manage_immediate_dot_point_after_eval(val)
 
                 # if we have floating point, get rid of too many digits after dot point:
-                if isinstance(val, float) and len(str(val)) >= 13:
+                if isinstance(val, float) and len(str(val)) >= MAX_DIGITS:
                     val = terminate_too_many_digits_after_dot(val)
 
                 # We'll keep the e format information in case there is one:
@@ -421,7 +425,7 @@ class CalcMainWindow(QMainWindow):
                     eval_str = manage_immediate_dot_point_after_eval(eval_str)
 
                 # if we have floating point, get rid of too many digits after dot point:
-                if isinstance(eval_str, float) and len(str(eval_str)) >= 13:
+                if isinstance(eval_str, float) and len(str(eval_str)) >= MAX_DIGITS:
                     eval_str = terminate_too_many_digits_after_dot(eval_str)
 
                 # We'll keep the e format information in case there is one:
@@ -464,7 +468,7 @@ class CalcMainWindow(QMainWindow):
                         eval_str = manage_immediate_dot_point_after_eval(eval_str)
 
                     # if we have floating point, get rid of too many digits after dot point:
-                    if isinstance(eval_str, float) and len(str(eval_str)) >= 13:
+                    if isinstance(eval_str, float) and len(str(eval_str)) >= MAX_DIGITS:
                         eval_str = terminate_too_many_digits_after_dot(eval_str)
 
                     # Get e format:
@@ -490,7 +494,7 @@ class CalcMainWindow(QMainWindow):
                     eval_str = manage_immediate_dot_point_after_eval(eval_str)
 
                     # if we have floating point, get rid of too many digits after dot point:
-                    if isinstance(eval_str, float) and len(str(eval_str)) >= 13:
+                    if isinstance(eval_str, float) and len(str(eval_str)) >= MAX_DIGITS:
                         eval_str = terminate_too_many_digits_after_dot(eval_str)
 
                     # We don't track e format - we enter str_val so it's in range.
@@ -590,7 +594,7 @@ class CalcMainWindow(QMainWindow):
             if len(self.__str_val_operations) > 0 and self.__str_val_operations[-1] not in ["/", "*", "-", "+"]:
                 pass
             # Check for max display length - don't allow to add more digits if we don't have more space:
-            elif (len(self.__str_val) < 13) or self.__display_field.text() in ["ZERO DIVISION", "INVALID INPUT", "INF"]:
+            elif (len(self.__str_val) < MAX_DIGITS) or self.__display_field.text() in ["ZERO DIVISION", "INVALID INPUT", "INF"]:
                 # If sender is not "0":
                 if sender.text() != "0":
                     # If str_val is already at "0":
@@ -651,7 +655,7 @@ class CalcMainWindow(QMainWindow):
                             eval_str = eval(self.__str_val_operations)
 
                             # if we have floating point, get rid of too many digits after dot point:
-                            if isinstance(eval_str, float) and len(str(eval_str)) >= 13:
+                            if isinstance(eval_str, float) and len(str(eval_str)) >= MAX_DIGITS:
                                 eval_str = terminate_too_many_digits_after_dot(eval_str)
 
                             # We'll keep the e format information in case there is one:
@@ -702,7 +706,7 @@ class CalcMainWindow(QMainWindow):
                         eval_str = manage_immediate_dot_point_after_eval(eval_str)
 
                         # if we have floating point, get rid of too many digits after dot point:
-                        if isinstance(eval_str, float) and len(str(eval_str)) >= 13:
+                        if isinstance(eval_str, float) and len(str(eval_str)) >= MAX_DIGITS:
                             eval_str = terminate_too_many_digits_after_dot(eval_str)
 
                         # We'll keep the e format information in case there is one:
@@ -767,7 +771,7 @@ class CalcMainWindow(QMainWindow):
                         val = int(self.__str_val)
 
                         # If we have too many digits in display, we terminate them:
-                        if len(str(val)) > 13:
+                        if len(str(val)) > MAX_DIGITS:
                             val = terminate_too_many_digits(val)
                             val //= 10
                     # Else - there's dot:
@@ -782,7 +786,7 @@ class CalcMainWindow(QMainWindow):
                             val = float(self.__str_val)
 
                             # If we have too many digits in display (excluding dot)
-                            if len(str(val)) >= 14:
+                            if len(str(val)) >= MAX_DIGITS + 1:
                                 val = terminate_too_many_digits_after_dot(val)
 
                     # Set str_val + dot (if there was one):
@@ -807,7 +811,7 @@ class CalcMainWindow(QMainWindow):
                             # We get int:
                             val = int(self.__str_val_operations)
                             # If we have too many digits in display, we terminate them:
-                            if len(str(val)) >= 14:
+                            if len(str(val)) >= MAX_DIGITS + 1:
                                 val = terminate_too_many_digits(val)
 
                             # Getting e format:
@@ -818,7 +822,7 @@ class CalcMainWindow(QMainWindow):
                             val = float(self.__str_val_operations)
 
                             # If we have too many digits in display (excluding dot)
-                            if len(str(val)) >= 13:
+                            if len(str(val)) >= MAX_DIGITS:
                                 val = terminate_too_many_digits_after_dot(val)
                             # Getting e format:
                             e_format = get_e_format(val)
@@ -832,7 +836,7 @@ class CalcMainWindow(QMainWindow):
                             val = int(self.__str_val_operations)
 
                             # If we have too many digits in display, we terminate them:
-                            if len(str(val)) >= 14:
+                            if len(str(val)) >= MAX_DIGITS + 1:
                                 val = terminate_too_many_digits(val)
 
                             # Getting e format:
@@ -844,7 +848,7 @@ class CalcMainWindow(QMainWindow):
                             val = float(self.__str_val_operations)
 
                             # If we have too many digits in display (excluding dot)
-                            if len(str(val)) >= 13:
+                            if len(str(val)) >= MAX_DIGITS:
                                 val = terminate_too_many_digits_after_dot(val)
                             # Getting e format:
                             e_format = get_e_format(val)
