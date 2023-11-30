@@ -364,7 +364,7 @@ class CalcMainWindow(QMainWindow):
                 operation = lambda x: x**2
             elif button_name == "sqrt(x)":
                 operation = lambda x: math.sqrt(x)
-
+                
             # We have entered digits but have yet to perform any operation:
             if self.__str_val != "" and self.__str_val_operations == "":
                 # Check for solo dot point:
@@ -417,7 +417,7 @@ class CalcMainWindow(QMainWindow):
                 self.__str_val = ""
 
             # We performed operations, but we don't have any following operator:
-            elif self.__str_val_operations != 0 and self.__str_val_operations[-1] not in ["/", "*", "-", "+"]:
+            elif self.__str_val_operations != "" and self.__str_val_operations[-1] not in ["/", "*", "-", "+"]:
                 # Evaluate:
                 eval_str = eval(self.__str_val_operations)
                 eval_str = operation(eval_str)
@@ -457,7 +457,7 @@ class CalcMainWindow(QMainWindow):
                 self.__str_val = ""
 
             # We have str_val operations:
-            elif self.__str_val_operations != 0 and self.__str_val_operations[-1] in ["/", "*", "-", "+"]:
+            elif self.__str_val_operations != "" and self.__str_val_operations[-1] in ["/", "*", "-", "+"]:
                 # We haven't entered any digits -
                 # evaluate 1/x on str_val and perform operation with given op (enter result in str_val):
                 if self.__str_val == "":
