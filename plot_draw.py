@@ -107,7 +107,7 @@ class PlotWindow(QWidget):
     # Function for drawing plots
     def draw_plot(self):
         # Creating dialog for data input
-        dialog_data = InputDialog2()
+        dialog_data = InputDialog()
         
         # Getting data from input
         dialog_data.exec()
@@ -133,18 +133,22 @@ class PlotWindow(QWidget):
         # Catching errors for empty data
         except InputError:
             self.error_window('Entered data cannot be empty')
+            return
 
         # Catching errors for invalid chars
         except InvalidCharacters:
             self.error_window(invalid_chars)
+            return
 
         # Catching errors for LimErrors
         except LimError:
             self.error_window(lim1=lim1, lim2=lim2)
+            return
 
         # Catching errors and displaying error window
         except:
             self.error_window(function_str, lim1, lim2)
+            return
 
         # Creating vector with x values
         xvals = np.arange(lim1, lim2, 0.01)
@@ -161,6 +165,7 @@ class PlotWindow(QWidget):
 
         except:
             self.error_window('Error while calc:\n' + function_math, lim1, lim2)
+            return
 
         # Drawing plot
         self.canvas.axes.plot(xvals, yvals)
@@ -210,7 +215,7 @@ class PlotWindow(QWidget):
         self.help_window.show()
 
 # Class for input dialog
-class InputDialog2(QDialog):
+class InputDialog(QDialog):
     def __init__(self):
         super().__init__()
         # Calling function to initialize UI
@@ -233,7 +238,7 @@ class InputDialog2(QDialog):
         ]
         
         # Input fields labels
-        labels_text = ['f(x):', 'Lower limit:', 'Upper limit']
+        labels_text = ['f(x):', 'Lower limit:', 'Upper limit:']
 
         self.input_fields[0].installEventFilter(self)
         self.input_fields[1].installEventFilter(self)
@@ -244,6 +249,7 @@ class InputDialog2(QDialog):
             main_layout.addWidget(label)
             main_layout.addWidget(self.input_fields[i])
 
+        # Layout for keyboard buttons
         self.buttons_layout = QVBoxLayout()
         main_layout.addLayout(self.buttons_layout)
 
@@ -271,23 +277,28 @@ class InputDialog2(QDialog):
         ]
 
         # Creating buttons for changing input fields
-        button_func_field = QPushButton('f(x)')
-        button_lower_limit_field = QPushButton('Lower limit')
-        button_upper_limit_field = QPushButton('Upper limit')
-        button_draw_plot = QPushButton('Draw plot')
-
+        button_func_field = QPushButton('Function')
         button_func_field.clicked.connect(self.switch_func_keyboard)
+        button_lower_limit_field = QPushButton('Lower limit')
         button_lower_limit_field.clicked.connect(self.switch_lower_lim_keyboard)
+        button_upper_limit_field = QPushButton('Upper limit')
         button_upper_limit_field.clicked.connect(self.switch_upper_lim_keyboard)
-        button_draw_plot.clicked.connect(self.accept)
-
-        button_draw_plot.setShortcut(Qt.Key.Key_Return)
-
+        
+        # Creating Layout for buttons
+        input_field_buttons = QHBoxLayout()
         
         # Adding buttons to layout
-        main_layout.addWidget(button_func_field)
-        main_layout.addWidget(button_lower_limit_field)
-        main_layout.addWidget(button_upper_limit_field)
+        input_field_buttons.addWidget(button_func_field)
+        input_field_buttons.addWidget(button_lower_limit_field)
+        input_field_buttons.addWidget(button_upper_limit_field)
+
+        main_layout.addLayout(input_field_buttons)
+
+        # Button for drawing plot
+        button_draw_plot = QPushButton('Draw plot')
+        button_draw_plot.clicked.connect(self.accept)
+        button_draw_plot.setShortcut(Qt.Key.Key_Return)
+
         main_layout.addWidget(button_draw_plot)
 
         # Setting main_layout as dialog layout
@@ -370,7 +381,12 @@ class CustomLineEdit(QLineEdit):
 
     def keyPressEvent(self, event):
         # self.check_active_field()
-        allowed_keys = [Qt.Key.Key_Backspace, Qt.Key.Key_Left, Qt.Key.Key_Right, Qt.Key.Key_X, Qt.Key.Key_Minus]
+        allowed_keys = [Qt.Key.Key_Backspace, 
+                        Qt.Key.Key_Left, 
+                        Qt.Key.Key_Right, 
+                        Qt.Key.Key_X, 
+                        Qt.Key.Key_Minus, 
+                        Qt.Key.Key_Plus]
         if event.text().isdigit() or event.key() in allowed_keys:
             super().keyPressEvent(event)
 
