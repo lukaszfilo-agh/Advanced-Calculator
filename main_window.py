@@ -372,6 +372,10 @@ class CalcMainWindow(QMainWindow):
                     val = float(self.__str_val)
                 val = operation(val)
 
+                if button_name == "sqrt(x)":
+                    # Protection against adding dot point even when it's not necessary:
+                    val = manage_immediate_dot_point_after_eval(val)
+
                 # if we have floating point, get rid of too many digits after dot point:
                 if isinstance(val, float) and len(str(val)) >= 13:
                     val = terminate_too_many_digits_after_dot(val)
@@ -412,6 +416,10 @@ class CalcMainWindow(QMainWindow):
                 eval_str = eval(self.__str_val_operations)
                 eval_str = operation(eval_str)
 
+                if button_name == "sqrt(x)":
+                    # Protection against adding dot point even when it's not necessary:
+                    eval_str = manage_immediate_dot_point_after_eval(eval_str)
+
                 # if we have floating point, get rid of too many digits after dot point:
                 if isinstance(eval_str, float) and len(str(eval_str)) >= 13:
                     eval_str = terminate_too_many_digits_after_dot(eval_str)
@@ -451,6 +459,10 @@ class CalcMainWindow(QMainWindow):
                     eval_str = eval(self.__str_val_operations[:-1])
                     eval_str = operation(eval_str)
 
+                    if button_name == "sqrt(x)":
+                        # Protection against adding dot point even when it's not necessary:
+                        eval_str = manage_immediate_dot_point_after_eval(eval_str)
+
                     # if we have floating point, get rid of too many digits after dot point:
                     if isinstance(eval_str, float) and len(str(eval_str)) >= 13:
                         eval_str = terminate_too_many_digits_after_dot(eval_str)
@@ -474,6 +486,9 @@ class CalcMainWindow(QMainWindow):
                     eval_str = eval(self.__str_val)
                     eval_str = operation(eval_str)
 
+                    # Protection against adding dot point even when it's not necessary:
+                    eval_str = manage_immediate_dot_point_after_eval(eval_str)
+
                     # if we have floating point, get rid of too many digits after dot point:
                     if isinstance(eval_str, float) and len(str(eval_str)) >= 13:
                         eval_str = terminate_too_many_digits_after_dot(eval_str)
@@ -491,6 +506,15 @@ class CalcMainWindow(QMainWindow):
             if self.__str_val[-1] == ".":
                 self.__str_val = self.__str_val[:-1]
                 self.__display_field.setText(self.__str_val)
+
+        # Function managing appearing of dot point always after "/" and sqrt(x) even if it's not needed:
+        def manage_immediate_dot_point_after_eval(num: Union[int, float]) -> Union[int, float]:
+            print(num)
+            if isinstance(num, float):
+                print(int(num), num)
+                if int(num) == num:
+                    return int(num)
+            return num
 
         # Get a button which is a sender of this information:
         sender = self.sender()
@@ -529,12 +553,18 @@ class CalcMainWindow(QMainWindow):
         elif sender.text() == "=":
             # If there is an operator in str_val_operations:
             if len(self.__str_val_operations) > 0 and self.__str_val_operations[-1] in ["/", "*", "-", "+"]:
+                # Get binary operator:
+                bin_op = self.__str_val_operations[-1]
                 try:
                     # We have 1 value - perform evaluation on itself:
                     if self.__str_val == "":
                         # We addd the same number to our evaluation:
                         self.__str_val_operations += self.__str_val_operations[:-1]
                         eval_str = eval(self.__str_val_operations)
+
+                        if bin_op == "/":
+                            # Protection against adding dot point even when it's not necessary:
+                            eval_str = manage_immediate_dot_point_after_eval(eval_str)
                         set_displays_after_op_eq(eval_str)
                     # We have 2 values, evaluate regularly:
                     else:
@@ -543,6 +573,9 @@ class CalcMainWindow(QMainWindow):
                         # We str_val number to operation:
                         self.__str_val_operations += self.__str_val
                         eval_str = eval(self.__str_val_operations)
+                        if bin_op == "/":
+                            # Protection against adding dot point even when it's not necessary:
+                            eval_str = manage_immediate_dot_point_after_eval(eval_str)
                         set_displays_after_op_eq(eval_str)
 
                 except ZeroDivisionError:
@@ -666,6 +699,9 @@ class CalcMainWindow(QMainWindow):
                         # We get the value from str_val to our operations_val and evaluate:
                         self.__str_val_operations += self.__str_val
                         eval_str = eval(self.__str_val_operations)
+
+                        # Protection against adding dot point even when it's not necessary:
+                        eval_str = manage_immediate_dot_point_after_eval(eval_str)
 
                         # if we have floating point, get rid of too many digits after dot point:
                         if isinstance(eval_str, float) and len(str(eval_str)) >= 13:
