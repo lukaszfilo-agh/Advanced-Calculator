@@ -10,7 +10,8 @@ from PyQt6.QtWidgets import (
     QDialogButtonBox, 
     QFormLayout
 )
-from PyQt6 import QtWidgets
+from PyQt6.QtCore import QRegularExpression, Qt
+from PyQt6.QtGui import QRegularExpressionValidator, QKeyEvent
 import numpy as np
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import (
@@ -224,17 +225,13 @@ class InputDialog2(QDialog):
 
         # Input fields list
         self.input_fields = [
-            QLineEdit(),  # Function input
-            QLineEdit(),  # Lower limit input
-            QLineEdit()  # Upper limit input
+            CustomLineEdit(),  # Function input
+            CustomLineEdit(),  # Lower limit input
+            CustomLineEdit()  # Upper limit input
         ]
         
         # Input fields labels
         labels_text = ['f(x):', 'Lower limit:', 'Upper limit']
-
-        # Setting all input fields as read only
-        for input_field in self.input_fields:
-            input_field.setReadOnly(True)
 
         for i in range(len(self.input_fields)):
             label = QLabel(labels_text[i])
@@ -338,6 +335,14 @@ class InputDialog2(QDialog):
                 button.clicked.connect(self.on_button_clicked)
                 row_layout.addWidget(button)
             self.buttons_layout.addLayout(row_layout)
+
+class CustomLineEdit(QLineEdit):
+    def __init__(self):
+        super().__init__()
+
+    def keyPressEvent(self, event):
+        if event.text().isdigit() or event.key() == 16777219:  # 16777219 to kod klawisza Backspace
+            super().keyPressEvent(event)
 
 class InputDialog(QDialog):
     def __init__(self):
