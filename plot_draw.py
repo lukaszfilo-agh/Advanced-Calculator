@@ -8,7 +8,8 @@ from PyQt6.QtWidgets import (
     QDialog, 
     QLineEdit, 
     QDialogButtonBox, 
-    QFormLayout
+    QFormLayout,
+    QSpacerItem
 )
 from PyQt6.QtCore import QRegularExpression, Qt, QEvent
 from PyQt6.QtGui import QRegularExpressionValidator, QKeyEvent, QShortcut, QKeySequence
@@ -151,7 +152,8 @@ class PlotWindow(QWidget):
             return
 
         # Creating vector with x values
-        xvals = np.arange(lim1, lim2, 0.01)
+        xvals = np.arange(100*lim1, 100*lim2, 0.01)
+        xvals_lim = np.arange(lim1, lim2, 0.01)
 
         # Creating expression for eval
         function_math = convert_func_math(function_str)
@@ -162,6 +164,7 @@ class PlotWindow(QWidget):
         try:
             # Calculating values for function
             yvals = fx(xvals)
+            yvals_lim = fx(xvals_lim)
 
         except:
             self.error_window('Error while calc:\n' + function_math, lim1, lim2)
@@ -178,8 +181,10 @@ class PlotWindow(QWidget):
             self.canvas.axes.axhline(0, color='black', linewidth=1)
             self.canvas.axes.axvline(0, color='black', linewidth=1)
         # Setting lims for x axis
-        # self.canvas.axes.set_xlim((lim1, lim2))
-        # self.canvas.axes.set_ylim((fx(lim1), fx(lim2)))
+        self.canvas.axes.set_xlim((lim1, lim2))
+        ylim_min = np.min(yvals_lim)
+        ylim_max = np.max(yvals_lim)
+        self.canvas.axes.set_ylim((ylim_min, ylim_max))
         # Displaying plot
         self.canvas.draw()
 
@@ -244,6 +249,10 @@ class InputDialog(QDialog):
         self.input_fields[1].installEventFilter(self)
         self.input_fields[2].installEventFilter(self)
 
+        self.input_fields[0].mousePressEvent = lambda event: self.switch_func_keyboard()
+        self.input_fields[1].mousePressEvent = lambda event: self.switch_lower_lim_keyboard()
+        self.input_fields[2].mousePressEvent = lambda event: self.switch_upper_lim_keyboard()
+
         for i in range(len(self.input_fields)):
             label = QLabel(labels_text[i])
             main_layout.addWidget(label)
@@ -264,32 +273,22 @@ class InputDialog(QDialog):
                 ['<', '>', '<-', 'C']
             ],
             [  # Keyboard for lower limit
+                [' ', ' ', ' ', ' '],
+                [' ', ' ', ' ', ' '],
+                [' ', ' ', ' ', ' '],
+                [' ', ' ', ' ', ' '],
                 ['+', '-', '.', 'pi'],
                 ['<', '>', '<-', 'C']
             ],
             [  # Keyboard for upper limit
+                [' ', ' ', ' ', ' '],
+                [' ', ' ', ' ', ' '],
+                [' ', ' ', ' ', ' '],
+                [' ', ' ', ' ', ' '],
                 ['+', '-', '.', 'pi'],
                 ['<', '>', '<-', 'C']
             ]
         ]
-
-        # Creating buttons for changing input fields
-        button_func_field = QPushButton('Function')
-        button_func_field.clicked.connect(self.switch_func_keyboard)
-        button_lower_limit_field = QPushButton('Lower limit')
-        button_lower_limit_field.clicked.connect(self.switch_lower_lim_keyboard)
-        button_upper_limit_field = QPushButton('Upper limit')
-        button_upper_limit_field.clicked.connect(self.switch_upper_lim_keyboard)
-        
-        # Creating Layout for buttons
-        input_field_buttons = QHBoxLayout()
-        
-        # Adding buttons to layout
-        input_field_buttons.addWidget(button_func_field)
-        input_field_buttons.addWidget(button_lower_limit_field)
-        input_field_buttons.addWidget(button_upper_limit_field)
-
-        main_layout.addLayout(input_field_buttons)
 
         # Button for drawing plot
         button_draw_plot = QPushButton('Draw plot')
@@ -338,6 +337,8 @@ class InputDialog(QDialog):
             print(f'Wprowadzona wartość pola {self.active_field + 1}: {expression}')
             self.active_field = (self.active_field + 1) % len(self.input_fields)
             self.update_keyboard()
+        elif text == ' ':
+            pass
         elif text == '=':
             pass
         else:
