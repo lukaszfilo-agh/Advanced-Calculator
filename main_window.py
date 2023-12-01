@@ -416,6 +416,10 @@ class CalcMainWindow(QMainWindow):
                 else:
                     val = float(self.__str_val)
 
+                if button_name == "10^x" and float(self.__str_val) > 1e6:
+                    handle_overflow_err()
+                    return
+
                 val = operation(val)
 
                 # Protecting against unnecessary parsing:
@@ -457,6 +461,9 @@ class CalcMainWindow(QMainWindow):
 
             # We performed operations, but we don't have any following operator:
             elif self.__str_val_operations != "" and self.__str_val_operations[-1] not in ["/", "*", "-", "+"]:
+                if button_name == "10^x" and float(self.__str_val_operations) > 1e6:
+                    handle_overflow_err()
+                    return
                 # Evaluate:
                 eval_str = eval(self.__str_val_operations)
                 eval_str = operation(eval_str)
@@ -499,7 +506,10 @@ class CalcMainWindow(QMainWindow):
                 # We haven't entered any digits -
                 # evaluate 1/x on str_val and perform operation with given op (enter result in str_val):
                 if self.__str_val == "":
-                    # Evaluate - only the number:
+                    if button_name == "10^x" and float(self.__str_val_operations[:-1]) > 1e6:
+                        handle_overflow_err()
+                        return
+                        # Evaluate - only the number:
                     eval_str = eval(self.__str_val_operations[:-1])
                     eval_str = operation(eval_str)
 
@@ -523,6 +533,9 @@ class CalcMainWindow(QMainWindow):
                     # Str_val_operations remains as it was:
                 # Else we have str_val - perform 1/x on it:
                 else:
+                    if button_name == "10^x" and float(self.__str_val) > 1e6:
+                        handle_overflow_err()
+                        return
                     # Check for solo dot point:
                     manage_solo_dot()
                     # Evaluate str_val
@@ -907,6 +920,19 @@ class CalcMainWindow(QMainWindow):
             if self.__str_val != "" and "." not in self.__str_val and len(self.__str_val) <= MAX_DIGITS - 2 and "e" not in self.__display_field.text():
                 self.__str_val += "."
                 self.__display_field.setText(self.__str_val)
+        # Pi or e in sender:
+        elif sender.text() in ["π", "e"]:
+            val = math.e
+            if sender.text() == "π":
+                val = math.pi
+            val = terminate_too_many_digits_after_dot(val)
+            if self.__str_val_operations == "" or (self.__str_val_operations != "" and self.__str_val_operations[-1] in ["/", "*", "-", "+"]):
+                self.__str_val = str(val)
+                self.__display_field.setText(self.__str_val)
+            elif self.__str_val_operations != "" and self.__str_val_operations[-1] not in ["/", "x", "-", "+"]:
+                self.__str_val_operations = str(val)
+                self.__display_field.setText(self.__str_val_operations)
+                self.__operations_field.setText(self.__str_val_operations)
 
     def __draw_plot_window(self):
         self.plot_window = PlotWindow(self)
