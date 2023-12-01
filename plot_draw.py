@@ -25,6 +25,17 @@ import re
 import matplotlib
 matplotlib.use('QtAgg')
 
+# TODO add checking for x in input
+# TODO add pi and arrows
+# TODO add backspace in inputdialog
+# TODO add dot from keyboard
+# TODO lims for multiple plots
+# TODO add ^ input from keyboard
+# TODO remove = from function keyboard
+# TODO remove >< from function keyboard
+# TODO repair function eg 1/x
+# TODO buttons from keyboards adding at back of inputfield
+
 # Class for widged plot display
 class MplCanvas(FigureCanvas):
     def __init__(self, parent=None, width=11, height=4, dpi=100):
@@ -152,7 +163,7 @@ class PlotWindow(QWidget):
             return
 
         # Creating vector with x values
-        xvals = np.arange(100*lim1, 100*lim2, 0.01)
+        xvals = np.arange(lim1 - 100, lim2 + 100, 0.01)
         xvals_lim = np.arange(lim1, lim2, 0.01)
 
         # Creating expression for eval
@@ -419,7 +430,7 @@ class Help_Plot(QWidget):
 
 
 def func_bad_chars(expression):
-    result = re.findall(r'(?!(?:sin|cos|tan|tg|e\^|\d+|[\(\)\+\-\*\/\^]|\dx|x))\b\S+\b', expression)
+    result = re.findall(r'(?!(?:sin|cos|tan|ctg|tg|e\^|\d+|[\(\)\+\-\*\/\^]|\dx|x))\b\S+\b', expression)
     return result
 
 
@@ -439,6 +450,10 @@ def convert_func_math(expression):
     # Change 'tan or tg' to 'np.tan'
     expression = re.sub(r'\btan\b', 'np.tan', expression)
     expression = re.sub(r'\btg\b', 'np.tan', expression)
+
+    # Change 'ctan or ctg' to '1/np.tan'
+    expression = re.sub(r'\btan\b', '1/np.tan', expression)
+    expression = re.sub(r'\btg\b', '1/np.tan', expression)
 
     # Change 'x' to '*x'
     expression = re.sub(r'(\d)(x)', r'\1*\2', expression)
