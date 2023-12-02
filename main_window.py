@@ -549,13 +549,16 @@ class CalcMainWindow(QMainWindow):
                     if isinstance(eval_str, float) and len(str(eval_str)) >= MAX_DIGITS:
                         eval_str = terminate_too_many_digits_after_dot(eval_str)
 
-                    # We don't track e format - we enter str_val so it's in range.
+                    # Get e format:
+                    e_format = get_e_format(eval_str)
 
                     # Keep the value:
                     self.__str_val = str(eval_str)
 
-                    # Display it:
-                    self.__display_field.setText(self.__str_val)
+                    if e_format != "":
+                        self.__display_field.setText(e_format)
+                    else:
+                        self.__display_field.setText(self.__str_val)
 
         # Helper function to manage solely dot appearance before evaluation:
         def manage_solo_dot() -> None:
