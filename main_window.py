@@ -15,7 +15,7 @@ from PyQt6.QtWidgets import (
     QStatusBar
 )
 
-from plot_draw import PlotWindow
+from plot_window import PlotWindow
 
 # Window size:
 WINDOW_WIDTH = 400

@@ -5,14 +5,8 @@ from PyQt6.QtWidgets import (
     QWidget,
     QLabel,
     QMessageBox,
-    QDialog, 
-    QLineEdit, 
-    QDialogButtonBox, 
-    QFormLayout,
-    QSpacerItem
 )
-from PyQt6.QtCore import QRegularExpression, Qt, QEvent
-from PyQt6.QtGui import QRegularExpressionValidator, QKeyEvent, QShortcut, QKeySequence
+from PyQt6.QtCore import Qt, QEvent
 import numpy as np
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import (
@@ -25,16 +19,17 @@ import re
 import matplotlib
 matplotlib.use('QtAgg')
 
+from plot_input_dialog import PlotInputDialog
+
 # TODO add checking for x in input
 # TODO add pi and arrows
 # TODO add backspace in inputdialog
-# TODO add dot from keyboard
 # TODO lims for multiple plots
-# TODO add ^ input from keyboard
-# TODO remove = from function keyboard
-# TODO remove >< from function keyboard
 # TODO repair function eg 1/x
 # TODO buttons from keyboards adding at back of inputfield
+# TODO filtering lims in regex
+
+# TODO remove >< from function keyboard but it works in stragne way
 
 # Class for widged plot display
 class MplCanvas(FigureCanvas):
@@ -51,7 +46,7 @@ class PlotWindow(QWidget):
         # Setting parent window
         self.parent = menu_window
         # Creating Help window
-        self.help_window = Help_Plot()
+        self.help_window = PlotHelpWindow()
         # Setting name of window
         self.setWindowTitle("Plot Window")
         # Rezisizing window
@@ -119,7 +114,7 @@ class PlotWindow(QWidget):
     # Function for drawing plots
     def draw_plot(self):
         # Creating dialog for data input
-        dialog_data = InputDialog()
+        dialog_data = PlotInputDialog()
         
         # Getting data from input
         dialog_data.exec()
@@ -134,9 +129,12 @@ class PlotWindow(QWidget):
             if len(invalid_chars) != 0:
                 raise InvalidCharacters
             
+            lim1 = convert_lim_math(lim1)
+            lim2 = convert_lim_math(lim2)
+
             # Conversion of lim1 and lim2
-            lim1 = float(lim1)
-            lim2 = float(lim2)
+            lim1 = eval(lim1)
+            lim2 = eval(lim2)
 
             # Checking for limit error
             if lim1 > lim2:
@@ -230,171 +228,7 @@ class PlotWindow(QWidget):
     def show_help(self):
         self.help_window.show()
 
-# Class for input dialog
-class InputDialog(QDialog):
-    def __init__(self):
-        super().__init__()
-        # Calling function to initialize UI
-        self.init_ui()
-
-    def init_ui(self):
-        # Setting window title
-        self.setWindowTitle('Enter Data')
-        # Setting window size
-        self.resize(500, 500)
-
-        # Creating main layout
-        main_layout = QVBoxLayout()
-
-        # Input fields list
-        self.input_fields = [
-            CustomLineEdit(),  # Function input
-            CustomLineEdit(),  # Lower limit input
-            CustomLineEdit()  # Upper limit input
-        ]
-        
-        # Input fields labels
-        labels_text = ['f(x):', 'Lower limit:', 'Upper limit:']
-
-        self.input_fields[0].installEventFilter(self)
-        self.input_fields[1].installEventFilter(self)
-        self.input_fields[2].installEventFilter(self)
-
-        self.input_fields[0].mousePressEvent = lambda event: self.switch_func_keyboard()
-        self.input_fields[1].mousePressEvent = lambda event: self.switch_lower_lim_keyboard()
-        self.input_fields[2].mousePressEvent = lambda event: self.switch_upper_lim_keyboard()
-
-        for i in range(len(self.input_fields)):
-            label = QLabel(labels_text[i])
-            main_layout.addWidget(label)
-            main_layout.addWidget(self.input_fields[i])
-
-        # Layout for keyboard buttons
-        self.buttons_layout = QVBoxLayout()
-        main_layout.addLayout(self.buttons_layout)
-
-        # Creating keyboards
-        self.keyboards = [
-            [  # Keyboard for function
-                ['*', '/', 'sin()', 'cos()'],
-                ['+', '-', 'tg()', 'ctg()'],
-                ['=', '^', 'arcsin()', 'arccos()'],
-                ['(', ')', 'arctg()', 'arcctg()'],
-                ['x', 'e', '| |', 'sqrt()'],
-                ['<', '>', '<-', 'C']
-            ],
-            [  # Keyboard for lower limit
-                [' ', ' ', ' ', ' '],
-                [' ', ' ', ' ', ' '],
-                [' ', ' ', ' ', ' '],
-                [' ', ' ', ' ', ' '],
-                ['+', '-', '.', 'pi'],
-                ['<', '>', '<-', 'C']
-            ],
-            [  # Keyboard for upper limit
-                [' ', ' ', ' ', ' '],
-                [' ', ' ', ' ', ' '],
-                [' ', ' ', ' ', ' '],
-                [' ', ' ', ' ', ' '],
-                ['+', '-', '.', 'pi'],
-                ['<', '>', '<-', 'C']
-            ]
-        ]
-
-        # Button for drawing plot
-        button_draw_plot = QPushButton('Draw plot')
-        button_draw_plot.clicked.connect(self.accept)
-        button_draw_plot.setShortcut(Qt.Key.Key_Return)
-
-        main_layout.addWidget(button_draw_plot)
-
-        # Setting main_layout as dialog layout
-        self.setLayout(main_layout)
-
-        self.active_field = 0
-        self.update_keyboard()
-
-    def eventFilter(self, obj, event):
-        if event.type() == QEvent.Type.KeyPress and obj in self.input_fields:
-            if event.key() == Qt.Key.Key_Tab:
-                active_index = self.input_fields.index(obj)
-                if active_index == 2:
-                    self.active_field = 0
-                else:
-                    self.active_field = active_index + 1
-            self.update_keyboard()
-        return super().eventFilter(obj, event)
-
-    def switch_func_keyboard(self):
-        self.active_field = 0
-        self.update_keyboard()
-    
-    def switch_lower_lim_keyboard(self):
-        self.active_field = 1
-        self.update_keyboard()
-    
-    def switch_upper_lim_keyboard(self):
-        self.active_field = 2
-        self.update_keyboard()
-
-    def on_button_clicked(self):
-        clicked_button = self.sender()
-        text = clicked_button.text()
-
-        if text == 'C':
-            self.input_fields[self.active_field].clear()
-        elif text == 'OK':
-            expression = self.input_fields[self.active_field].text()
-            print(f'Wprowadzona wartość pola {self.active_field + 1}: {expression}')
-            self.active_field = (self.active_field + 1) % len(self.input_fields)
-            self.update_keyboard()
-        elif text == ' ':
-            pass
-        elif text == '=':
-            pass
-        else:
-            current_text = self.input_fields[self.active_field].text()
-            new_text = current_text + text
-            self.input_fields[self.active_field].setText(new_text)
-
-    def update_keyboard(self):
-        # Deleting buttons
-        for i in reversed(range(self.buttons_layout.count())):
-            layout = self.buttons_layout.itemAt(i).layout()
-            if layout is not None:
-                for j in reversed(range(layout.count())):
-                    layout.itemAt(j).widget().deleteLater()
-                self.buttons_layout.removeItem(layout)
-
-        # Adding buttons
-        for row in self.keyboards[self.active_field]:
-            row_layout = QHBoxLayout()
-            for button_text in row:
-                button = QPushButton(button_text)
-                button.setFixedSize(100, 40)
-                button.clicked.connect(self.on_button_clicked)
-                row_layout.addWidget(button)
-            self.buttons_layout.addLayout(row_layout)
-    
-    def getInputs(self):
-        return tuple(input.text() for input in self.input_fields)
-
-class CustomLineEdit(QLineEdit):
-    def __init__(self):
-        super().__init__()
-
-    def keyPressEvent(self, event):
-        allowed_keys = [Qt.Key.Key_Backspace, 
-                        Qt.Key.Key_Left, 
-                        Qt.Key.Key_Right, 
-                        Qt.Key.Key_X, 
-                        Qt.Key.Key_Minus, 
-                        Qt.Key.Key_Plus]
-        if event.text().isdigit() or event.key() in allowed_keys:
-            super().keyPressEvent(event)
-
-
-class Help_Plot(QWidget):
+class PlotHelpWindow(QWidget):
     def __init__(self):
         super().__init__()
         # Setting name of window
@@ -471,7 +305,7 @@ def convert_func_math(expression):
     return expression
 
 def convert_lim_math(expression):
-    expression = re.sub(r'\bpi\b', 'np.pi', expression)
+    expression = re.sub(r'\bπ\b', 'np.pi', expression)
     return expression
 
 def lim_bad_chars(expression):
