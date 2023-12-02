@@ -460,7 +460,8 @@ class CalcMainWindow(QMainWindow):
                 self.__str_val = ""
 
             # We performed operations, but we don't have any following operator:
-            elif self.__str_val_operations != "" and self.__str_val_operations[-1] not in ["/", "*", "-", "+"]:
+            elif self.__str_val_operations != "" and (self.__str_val_operations[-1] not in ["/", "*", "-", "+", "%"]
+                                                      and self.__str_val_operations[-2:] != "**"):
                 if button_name == "10^x" and float(self.__str_val_operations) > 1e6:
                     handle_overflow_err()
                     return
@@ -502,7 +503,8 @@ class CalcMainWindow(QMainWindow):
                 self.__str_val = ""
 
             # We have str_val operations:
-            elif self.__str_val_operations != "" and self.__str_val_operations[-1] in ["/", "*", "-", "+"]:
+            elif self.__str_val_operations != "" and (self.__str_val_operations[-2:] == "**" or
+                                                      self.__str_val_operations[-1] in ["/", "*", "-", "+", "%"]):
                 # We haven't entered any digits -
                 # evaluate 1/x on str_val and perform operation with given op (enter result in str_val):
                 if self.__str_val == "":
@@ -510,7 +512,10 @@ class CalcMainWindow(QMainWindow):
                         handle_overflow_err()
                         return
                         # Evaluate - only the number:
-                    eval_str = eval(self.__str_val_operations[:-1])
+                    if self.__str_val_operations[-2:] == "**":
+                        eval_str = eval(self.__str_val_operations[:-2])
+                    else:
+                        eval_str = eval(self.__str_val_operations[:-1])
                     eval_str = operation(eval_str)
 
                     # Protecting against unnecessary parsing:
