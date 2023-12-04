@@ -138,7 +138,7 @@ class CalcMainWindow(QMainWindow):
             forth_line = [button_x_y, button_7, button_8, button_9, button_x]
 
             # Fifth line:
-            button_x_sqrt_y = QPushButton("x_sqrt(y)", self)
+            button_x_sqrt_y = QPushButton("ysqrt(x)", self)
             button_x_sqrt_y.setFont(font)
             button_4 = QPushButton("4", self)
             button_4.setFont(font)
@@ -331,7 +331,10 @@ class CalcMainWindow(QMainWindow):
             return e_format
 
         # Helper function which reoccurs in different cases of "=" operator:
-        def set_displays_after_op_eq(value: float) -> None:
+        def set_displays_after_op_eq(value: Union[float, int]) -> None:
+            # Protection against adding dot point even when it's not necessary:
+            value = manage_immediate_dot_point_after_eval(value)
+
             # if we have floating point, get rid of too many digits after dot point:
             if isinstance(value, float) and len(str(value)) >= MAX_DIGITS:
                 value = terminate_too_many_digits_after_dot(value)
@@ -404,6 +407,7 @@ class CalcMainWindow(QMainWindow):
             elif button_name == "10^x":
                 operation = lambda x: 10 ** x
 
+
             # We have entered digits but have yet to perform any operation:
             if self.__str_val != "" and self.__str_val_operations == "":
                 # Check for solo dot point:
@@ -460,8 +464,9 @@ class CalcMainWindow(QMainWindow):
                 self.__str_val = ""
 
             # We performed operations, but we don't have any following operator:
-            elif self.__str_val_operations != "" and (self.__str_val_operations[-1] not in ["/", "*", "-", "+", "%"]
-                                                      and self.__str_val_operations[-2:] != "**"):
+            elif self.__str_val_operations != "" and (self.__str_val_operations[-1] not in ["/", "*", "-", "+", "^"] and
+                                                      "root" not in self.__str_val_operations and
+                                                      "mod" not in self.__str_val_operations and "log base" not in self.__str_val_operations):
                 if button_name == "10^x" and float(self.__str_val_operations) > 1e6:
                     handle_overflow_err()
                     return
@@ -503,8 +508,9 @@ class CalcMainWindow(QMainWindow):
                 self.__str_val = ""
 
             # We have str_val operations:
-            elif self.__str_val_operations != "" and (self.__str_val_operations[-2:] == "**" or
-                                                      self.__str_val_operations[-1] in ["/", "*", "-", "+", "%"]):
+            elif self.__str_val_operations != "" and (self.__str_val_operations[-1] in ["/", "*", "-", "+", "^"] or
+                                                      "root" in self.__str_val_operations or "mod" in self.__str_val_operations or
+                                                      "log base" in self.__str_val_operations):
                 # We haven't entered any digits -
                 # evaluate 1/x on str_val and perform operation with given op (enter result in str_val):
                 if self.__str_val == "":
@@ -565,6 +571,45 @@ class CalcMainWindow(QMainWindow):
                     else:
                         self.__display_field.setText(self.__str_val)
 
+        # Helper function managing binary operators on buttons:
+        def manage_binary_operators(eval_str: Union[int, float], op: str) -> None:
+            # Check for complex results - throw an exception:
+            if isinstance(eval_str, complex):
+                raise ValueError
+
+            # Protection against adding dot point even when it's not necessary:
+            eval_str = manage_immediate_dot_point_after_eval(eval_str)
+
+            # if we have floating point, get rid of too many digits after dot point:
+            if isinstance(eval_str, float) and len(str(eval_str)) >= MAX_DIGITS:
+                eval_str = terminate_too_many_digits_after_dot(eval_str)
+
+            # We'll keep the e format information in case there is one:
+            e_format = get_e_format(eval_str)
+
+            # We keep evaluated value in str_val for further operations:
+            self.__str_val = str(eval_str)
+
+            # But if we have e_format we enter it on display:
+            if e_format != "":
+                self.__display_field.setText(e_format)
+            # Else - we enter the same value as in str_val:
+            else:
+                self.__display_field.setText(self.__str_val)
+
+            # We keep evaluated value in str_val_operations with bin_op for further operations:
+            self.__str_val_operations = str(eval_str) + op
+
+            # But if we have e_format we enter it on operations display with bin_op:
+            if e_format != "":
+                self.__operations_field.setText(e_format + op)
+            # Else - we enter the same value as in str_val_operations:
+            else:
+                self.__operations_field.setText(self.__str_val_operations)
+
+            # Setting str_val to "":
+            self.__str_val = ""
+
         # Helper function to manage solely dot appearance before evaluation:
         def manage_solo_dot() -> None:
             if self.__str_val[-1] == ".":
@@ -592,8 +637,9 @@ class CalcMainWindow(QMainWindow):
             elif sender.text() == "CE":
                 # Prevent situations in which we were able to delete main display
                 # when there was operation field and no operator - resulted in inf:
-                if self.__str_val_operations != "" and (self.__str_val_operations[-1] in ["/", "*", "-", "+", "%"] or
-                                                        self.__str_val_operations[-2:] == "**"):
+                if self.__str_val_operations != "" and (self.__str_val_operations[-1] in ["/", "*", "-", "+", "^"] or
+                                                        "root" in self.__str_val_operations or "mod" in self.__str_val_operations or
+                                                        "log base" in self.__str_val_operations):
                     self.__str_val = ""
                     self.__display_field.setText("")
                 # if its empty we can remove freely:
@@ -615,36 +661,64 @@ class CalcMainWindow(QMainWindow):
         # Evaluating with "=":
         elif sender.text() == "=":
             # If there is an operator in str_val_operations:
-            if len(self.__str_val_operations) > 0 and (self.__str_val_operations[-1] in ["/", "*", "-", "+", "%"] or
-                                                       self.__str_val_operations[-2:] == "**"):
+            if len(self.__str_val_operations) > 0 and (self.__str_val_operations[-1] in ["/", "*", "-", "+", "^"] or
+                                                       "root" in self.__str_val_operations or "mod" in self.__str_val_operations
+                                                       or "log base" in self.__str_val_operations):
                 # Get binary operator:
-                bin_op = self.__str_val_operations[-1]
-                if self.__str_val_operations[-2:] == "**":
-                    bin_op = "**"
+                op = ""
+                if "root" in self.__str_val_operations:
+                    op = "root"
+                elif "mod" in self.__str_val_operations:
+                    op = "mod"
+                elif "log base" in self.__str_val_operations:
+                    op = "log base"
+                else:
+                    op = self.__str_val_operations[-1]
                 try:
                     # We have 1 value - perform evaluation on itself:
                     if self.__str_val == "":
-                        # We add the same number to our evaluation:
-                        if self.__str_val_operations[-2:] == "**":
-                            self.__str_val_operations += self.__str_val_operations[:-2]
-                        else:
-                            self.__str_val_operations += self.__str_val_operations[:-1]
-                        eval_str = eval(self.__str_val_operations)
+                        idx = self.__str_val_operations.index(op)
+                        num = self.__str_val_operations[:idx]
 
-                        if bin_op in ["/", "%", "**"]:
-                            # Protection against adding dot point even when it's not necessary:
-                            eval_str = manage_immediate_dot_point_after_eval(eval_str)
+                        # We perform operations on numbers:
+                        if op == "root":
+                            eval_str = eval(f"{num}**{num}")
+                        elif op == "mod":
+                            eval_str = eval(f"{num}%{num}")
+                        elif op == "log base":
+                            eval_str = eval(f"math.log({num},{num})")
+                        elif op == "^":
+                            eval_str = eval(f"{num}**{num}")
+                        else:
+                            num += op + num
+                            eval_str = eval(num)
+
                         set_displays_after_op_eq(eval_str)
                     # We have 2 values, evaluate regularly:
                     else:
+                        # Get first num:
+                        idx = self.__str_val_operations.index(op)
+                        f_n = self.__str_val_operations[:idx]
+
                         # Check for solo dot point:
                         manage_solo_dot()
-                        # We str_val number to operation:
-                        self.__str_val_operations += self.__str_val
-                        eval_str = eval(self.__str_val_operations)
-                        if bin_op in ["/", "%", "**"]:
-                            # Protection against adding dot point even when it's not necessary:
-                            eval_str = manage_immediate_dot_point_after_eval(eval_str)
+
+                        # Get second num:
+                        s_n = self.__str_val
+
+                        # We perform operations on numbers:
+                        if op == "root":
+                            eval_str = eval(f"{f_n}**{s_n}")
+                        elif op == "mod":
+                            eval_str = eval(f"{f_n}%{s_n}")
+                        elif op == "log base":
+                            eval_str = eval(f"math.log({f_n},{s_n})")
+                        elif op == "^":
+                            eval_str = eval(f"{f_n}**{s_n}")
+                        else:
+                            num = f_n + op + s_n
+                            eval_str = eval(num)
+
                         set_displays_after_op_eq(eval_str)
 
                 except ZeroDivisionError:
@@ -658,8 +732,9 @@ class CalcMainWindow(QMainWindow):
         elif sender.text() in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]:
             # Protect against adding a number into display when
             # we have str_val_operations, but we don't have an operator:
-            if len(self.__str_val_operations) > 0 and (self.__str_val_operations[-1] not in ["/", "*", "-", "+", "%"] and
-                                                       self.__str_val_operations[-2:] != "**"):
+            if len(self.__str_val_operations) > 0 and (self.__str_val_operations[-1] not in ["/", "*", "-", "+", "^"] and
+                                                       "mod" not in self.__str_val_operations and "root" not in self.__str_val_operations
+                                                       and "log base" not in self.__str_val_operations):
                 pass
             # Check for max display length - don't allow to add more digits if we don't have more space:
             elif (len(self.__str_val) < MAX_DIGITS) or self.__display_field.text() in \
@@ -685,141 +760,165 @@ class CalcMainWindow(QMainWindow):
                 # Change value at display:
                 self.__display_field.setText(self.__str_val)
         # Binary operators in sender:
-        elif sender.text() in ["/", "x", "-", "+", "mod", "x^y"]:
-            # We get the binary op:
-            bin_op = sender.text()
-            if sender.text() == "x":
-                bin_op = "*"
-            elif sender.text() == "mod":
-                bin_op = "%"
+        elif sender.text() in ["/", "x", "-", "+", "mod", "x^y", "ysqrt(x)", "logy(x)"]:
+            op = ""
+            # Get operators:
+            if sender.text() == "ysqrt(x)":
+                op = "root"
+            elif sender.text() == "logy(x)":
+                op = "log base"
+            elif sender.text() == "x":
+                op = "*"
             elif sender.text() == "x^y":
-                bin_op = "**"
-            # If there is nothing in operations:
-            if len(self.__str_val_operations) == 0:
-                # We have something to draw to operations field:
-                if len(self.__str_val) > 0:
-                    # Check for solo dot point:
-                    manage_solo_dot()
-                    # We take input from str_val and add binary operator:
-                    self.__str_val_operations += self.__str_val + bin_op
-                    self.__operations_field.setText(self.__str_val_operations)
-
-                    # We artificially set str_val to "" so that it won't be evaluated until we enter another value:
-                    self.__str_val = ""
-            # If there is something in operations field:
+                op = "^"
             else:
-                # Str_val is empty - it wasn't overriden after entering bin_op:
-                if self.__str_val == "":
-                    # We have an operator - override:
-                    if self.__str_val_operations[-1] in ["/", "*", "-", "+", "%"] or \
-                            self.__str_val_operations[-2:] == "**":
+                op = sender.text()
 
-                        # We swap binary operators from str_val_operations:
-                        if self.__str_val_operations[-2:] == "**":
-                            self.__str_val_operations = self.__str_val_operations[:-2] + bin_op
-                        else:
-                            self.__str_val_operations = self.__str_val_operations[:-1] + bin_op
-                        # if there's no e format:
-                        if "e" not in self.__operations_field.text():
-                            self.__operations_field.setText(self.__str_val_operations)
-                        else:
-                            # We swap text from operations field:
-                            if self.__operations_field.text()[-2:] == "**":
-                                self.__operations_field.setText(self.__operations_field.text()[:-2] + bin_op)
-                            else:
-                                self.__operations_field.setText(self.__operations_field.text()[:-1] + bin_op)
-                    # No operator - add it:
+            # We don't have str_val:
+            if self.__str_val == "":
+                # We have str_val_operations:
+                if self.__str_val_operations != "":
+                    # We have an operator - delete previous:
+                    if self.__str_val_operations[-1] in ["/", "*", "-", "+", "^"]:
+                        self.__str_val_operations = self.__str_val_operations[:-1]
+                    elif "mod" in self.__str_val_operations:
+                        self.__str_val_operations = self.__str_val_operations[:-3]
+                    elif "root" in self.__str_val_operations:
+                        self.__str_val_operations = self.__str_val_operations[:-4]
+                    elif "log base" in self.__str_val_operations:
+                        self.__str_val_operations = self.__str_val_operations[:-8]
+                    # Else - no operator:
                     else:
-                        # Trying for 0 division error:
-                        try:
-                            # Evaluate value in str_val_operations - to check if we need e format:
+                        pass
+
+                    # Get evaluation for e format:
+                    eval_str = eval(self.__str_val_operations)
+
+                    # if we have floating point, get rid of too many digits after dot point:
+                    if isinstance(eval_str, float) and len(str(eval_str)) >= MAX_DIGITS:
+                        eval_str = terminate_too_many_digits_after_dot(eval_str)
+
+                    # We'll keep the e format information in case there is one:
+                    e_format = get_e_format(eval_str)
+
+                    # Displaying:
+                    if e_format != "":
+                        self.__display_field.setText(e_format)
+                        self.__operations_field.setText(e_format + op)
+                    else:
+                        self.__display_field.setText(self.__str_val_operations)
+                        self.__operations_field.setText(self.__str_val_operations + op)
+
+                    # Enter operator into str_val_operations:
+                    self.__str_val_operations += op
+
+                # We have nothing - pass
+                else:
+                    pass
+            # We have str_val
+            else:
+                # But nothing in operations:
+                if self.__str_val_operations == "":
+                    # Protect against adding dot with nothing after to operations:
+                    manage_solo_dot()
+
+                    # Leave display as it is.
+
+                    # We move the value to str_val_op:
+                    self.__str_val_operations = self.__str_val + op
+
+                    # Set str_val to "":
+                    self.__str_val = ""
+
+                    # Set operations field
+                    self.__operations_field.setText(self.__str_val_operations)
+                # Else - we need evaluation:
+                else:
+                    try:
+                        if "root" in self.__str_val_operations:
+                            # Get the location of operator:
+                            idx = self.__str_val_operations.index("root")
+
+                            # First number:
+                            f_n = self.__str_val_operations[:idx]
+
+                            # Check for solo dot point:
+                            manage_solo_dot()
+
+                            # Second number:
+                            s_n = self.__str_val
+
+                            eval_str = eval(f"({f_n})" + f"**(1/({s_n}))")
+                            manage_binary_operators(eval_str, op)
+
+                        elif "log base" in self.__str_val_operations:
+                            # Get the location of operator:
+                            idx = self.__str_val_operations.index("log base")
+
+                            # First number:
+                            f_n = self.__str_val_operations[:idx]
+
+                            # Check for solo dot point:
+                            manage_solo_dot()
+
+                            # Second number:
+                            s_n = self.__str_val
+
+                            eval_str = eval(f"math.log({f_n}, {s_n})")
+
+                            manage_binary_operators(eval_str, op)
+
+                        elif "mod" in self.__str_val_operations:
+                            # Get the location of operator:
+                            idx = self.__str_val_operations.index("mod")
+
+                            # First number:
+                            f_n = self.__str_val_operations[:idx]
+
+                            # Check for solo dot point:
+                            manage_solo_dot()
+
+                            # Second number:
+                            s_n = self.__str_val
+
+                            eval_str = eval(f"{f_n}%{s_n}")
+
+                            manage_binary_operators(eval_str, op)
+
+                        elif "^" in self.__str_val_operations:
+                            # Get the location of operator:
+                            idx = self.__str_val_operations.index("^")
+
+                            # First number:
+                            f_n = self.__str_val_operations[:idx]
+
+                            # Check for solo dot point:
+                            manage_solo_dot()
+
+                            # Second number:
+                            s_n = self.__str_val
+
+                            eval_str = eval(f"{f_n}**{s_n}")
+
+                            manage_binary_operators(eval_str, op)
+
+                        else:
+                            # Check for solo dot point:
+                            manage_solo_dot()
+
+                            # We get the value from str_val to our operations_val and evaluate:
+                            self.__str_val_operations += self.__str_val
                             eval_str = eval(self.__str_val_operations)
 
-                            # if we have floating point, get rid of too many digits after dot point:
-                            if isinstance(eval_str, float) and len(str(eval_str)) >= MAX_DIGITS:
-                                eval_str = terminate_too_many_digits_after_dot(eval_str)
-
-                            # We'll keep the e format information in case there is one:
-                            e_format = get_e_format(eval_str)
-
-                            # If we erased display, we don't change its view:
-                            if self.__display_field.text() != "":
-                                # Update str_val in order to place it on display:
-                                self.__str_val = str(eval_str)
-                            else:
-                                self.__str_val = ""
-
-                            # But if we have e_format we enter it on display:
-                            if e_format != "":
-                                self.__display_field.setText(e_format)
-                            # Else - we enter the same value as in str_val:
-                            else:
-                                self.__display_field.setText(self.__str_val)
-
-                            # We keep evaluated value in str_val_operations and add new bin_op:
-                            self.__str_val_operations += bin_op
-
-                            # But if we have e_format we enter it on operations display with bin_op:
-                            if e_format != "":
-                                self.__operations_field.setText(e_format + bin_op)
-                            # Else - we enter the same value as in str_val_operations:
-                            else:
-                                self.__operations_field.setText(self.__str_val_operations)
-
-                            # Keep value reset:
-                            self.__str_val = ""
-
-                        except ZeroDivisionError:
-                            handle_zero_division_err()
-                        except OverflowError:
-                            handle_overflow_err()
-                # Else - we evaluate (we have 1 operator and str_val):
-                else:
-                    # Trying for 0 division error:
-                    try:
-                        # Check for solo dot point:
-                        manage_solo_dot()
-                        # We get the value from str_val to our operations_val and evaluate:
-                        self.__str_val_operations += self.__str_val
-                        eval_str = eval(self.__str_val_operations)
-
-                        # Protection against adding dot point even when it's not necessary:
-                        eval_str = manage_immediate_dot_point_after_eval(eval_str)
-
-                        # if we have floating point, get rid of too many digits after dot point:
-                        if isinstance(eval_str, float) and len(str(eval_str)) >= MAX_DIGITS:
-                            eval_str = terminate_too_many_digits_after_dot(eval_str)
-
-                        # We'll keep the e format information in case there is one:
-                        e_format = get_e_format(eval_str)
-
-                        # We keep evaluated value in str_val for further operations:
-                        self.__str_val = str(eval_str)
-
-                        # But if we have e_format we enter it on display:
-                        if e_format != "":
-                            self.__display_field.setText(e_format)
-                        # Else - we enter the same value as in str_val:
-                        else:
-                            self.__display_field.setText(self.__str_val)
-
-                        # We keep evaluated value in str_val_operations with bin_op for further operations:
-                        self.__str_val_operations = str(eval_str) + bin_op
-
-                        # But if we have e_format we enter it on operations display with bin_op:
-                        if e_format != "":
-                            self.__operations_field.setText(e_format + bin_op)
-                        # Else - we enter the same value as in str_val_operations:
-                        else:
-                            self.__operations_field.setText(self.__str_val_operations)
-
-                        # Setting str_val to "":
-                        self.__str_val = ""
+                            manage_binary_operators(eval_str, op)
                     except ZeroDivisionError:
                         handle_zero_division_err()
+                    except ValueError:
+                        handle_value_err()
                     except OverflowError:
                         handle_overflow_err()
-        # Unary operators:
+
+        # Unary operators in sender:
         elif sender.text() in ["1/x", "x**2", "sqrt(x)", "|x|", "n!", "e^x", "ln", "log", "10^x"]:
             # Protect against trying to do operation over string:
             if self.__display_field.text() not in ["ZERO DIVISION", "INVALID INPUT", "INF"]:
@@ -832,7 +931,7 @@ class CalcMainWindow(QMainWindow):
                     handle_value_err()
                 except OverflowError:
                     handle_overflow_err()
-        # +/- in sender:
+        # +/- in sender: - FIX WRAPPING IN E FORMAT TOO SOON!
         elif sender.text() == "+/-":
             # If we entered a value:
             if self.__str_val != "":
