@@ -2,10 +2,8 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
     QHBoxLayout,
-    QWidget,
     QLabel,
-    QMessageBox,
-    QDialog, 
+    QDialog,
     QLineEdit
 )
 
@@ -36,7 +34,7 @@ class PlotInputDialog(QDialog):
             CustomLineEdit(),  # Lower limit input
             CustomLineEdit()  # Upper limit input
         ]
-        
+
         # Input fields labels
         labels_text = ['f(x):', 'Lower limit:', 'Upper limit:']
 
@@ -44,9 +42,9 @@ class PlotInputDialog(QDialog):
         self.input_fields[1].installEventFilter(self)
         self.input_fields[2].installEventFilter(self)
 
-        self.input_fields[0].mousePressEvent = lambda event: self.switch_func_keyboard()
-        self.input_fields[1].mousePressEvent = lambda event: self.switch_lower_lim_keyboard()
-        self.input_fields[2].mousePressEvent = lambda event: self.switch_upper_lim_keyboard()
+        self.input_fields[0].mousePressEvent = lambda e: self.switch_func_keyboard()
+        self.input_fields[1].mousePressEvent = lambda e: self.switch_lower_lim_keyboard()
+        self.input_fields[2].mousePressEvent = lambda e: self.switch_upper_lim_keyboard()
 
         for i in range(len(self.input_fields)):
             label = QLabel(labels_text[i])
@@ -63,25 +61,25 @@ class PlotInputDialog(QDialog):
                 ['*', '/', 'sin()', 'cos()'],
                 ['+', '-', 'tg()', 'ctg()'],
                 ['.', '^', 'arcsin()', 'arccos()'],
-                ['(', ')', 'arctg()', 'arcctg()'],
-                ['x', 'e', '| |', 'sqrt()'],
-                ['π', ' ', '<-', 'C']
+                ['(', ')', 'arctg()', ' '],
+                ['π', 'e', '| |', 'sqrt()'],
+                ['x', ' ', '<-', 'C']
             ],
             [  # Keyboard for lower limit
                 [' ', ' ', ' ', ' '],
                 [' ', ' ', ' ', ' '],
                 [' ', ' ', ' ', ' '],
                 [' ', ' ', ' ', ' '],
-                ['+', '-', '.', ' '],
-                ['π', ' ', '<-', 'C']
+                ['π', 'e', '.', ' '],
+                ['+', '-', '<-', 'C']
             ],
             [  # Keyboard for upper limit
                 [' ', ' ', ' ', ' '],
                 [' ', ' ', ' ', ' '],
                 [' ', ' ', ' ', ' '],
                 [' ', ' ', ' ', ' '],
-                ['+', '-', '.', ' '],
-                ['π', ' ', '<-', 'C']
+                ['π', 'e', '.', ' '],
+                ['+', '-', '<-', 'C']
             ]
         ]
 
@@ -112,11 +110,11 @@ class PlotInputDialog(QDialog):
     def switch_func_keyboard(self):
         self.active_field = 0
         self.update_keyboard()
-    
+
     def switch_lower_lim_keyboard(self):
         self.active_field = 1
         self.update_keyboard()
-    
+
     def switch_upper_lim_keyboard(self):
         self.active_field = 2
         self.update_keyboard()
@@ -127,11 +125,10 @@ class PlotInputDialog(QDialog):
 
         if text == 'C':
             self.input_fields[self.active_field].clear()
-        elif text == 'OK':
-            expression = self.input_fields[self.active_field].text()
-            print(f'Wprowadzona wartość pola {self.active_field + 1}: {expression}')
-            self.active_field = (self.active_field + 1) % len(self.input_fields)
-            self.update_keyboard()
+        elif text == '<-':
+            current_text = self.input_fields[self.active_field].text()
+            new_text = current_text[:-1]
+            self.input_fields[self.active_field].setText(new_text)
         elif text == ' ':
             pass
         else:
@@ -157,27 +154,27 @@ class PlotInputDialog(QDialog):
                 button.clicked.connect(self.on_button_clicked)
                 row_layout.addWidget(button)
             self.buttons_layout.addLayout(row_layout)
-    
+
     def getInputs(self):
         return tuple(input.text() for input in self.input_fields)
 
+# Class for custom line edit with keyboard filtering
 class CustomLineEdit(QLineEdit):
     def __init__(self):
         super().__init__()
 
     def keyPressEvent(self, event):
-        allowed_keys = [Qt.Key.Key_Backspace, 
-                        Qt.Key.Key_Left, 
-                        Qt.Key.Key_Right, 
-                        Qt.Key.Key_X, 
-                        Qt.Key.Key_Minus, 
+        allowed_keys = [Qt.Key.Key_Backspace,
+                        Qt.Key.Key_Left,
+                        Qt.Key.Key_Right,
+                        Qt.Key.Key_X,
+                        Qt.Key.Key_Minus,
                         Qt.Key.Key_Plus,
-                        94, # '^'
-                        40, # '('
-                        41 # ')'
+                        47,  # '/'
+                        94,  # '^'
+                        40,  # '('
+                        41  # ')'
                         ]
         print(event.key())
         if event.text().isdigit() or event.key() in allowed_keys:
             super().keyPressEvent(event)
-
-
