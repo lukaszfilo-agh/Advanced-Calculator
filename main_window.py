@@ -305,14 +305,14 @@ class CalcMainWindow(QMainWindow):
         def get_e_format(num: Union[int, float]) -> str:
             e_format = ""
 
-            # Fixing overflow after evaluation, we block immediate e format application to small numbers:
-            if len(str(num)) >= MAX_DIGITS and abs(num) > 1:
-
-                e_format = change_format_for_large_nums(num)
+            # Fixing overflow after evaluation:
+            if len(str(num)) >= MAX_DIGITS:
 
                 # Block too small e:
                 if 1e-8 < num < 1e11:
                     return ""
+
+                e_format = change_format_for_large_nums(num)
 
                 # if we take too much display space with e format:
                 if len(e_format) >= MAX_DIGITS:
@@ -924,7 +924,6 @@ class CalcMainWindow(QMainWindow):
                             e_format = get_e_format(val)
                         # Else - there's dot:
                         else:
-                            print(self.__str_val_operations)
                             # We get float:
                             val = float(self.__str_val_operations)
 
