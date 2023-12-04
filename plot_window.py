@@ -179,7 +179,7 @@ class PlotWindow(QWidget):
             return
 
         # Catching errors for INF in yvals
-        except InfError:
+        except InfNanError:
             return
 
         # Catching all other exceptions
