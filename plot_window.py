@@ -21,6 +21,7 @@ matplotlib.use('QtAgg')
 
 
 # TODO repair function eg 1/x
+# TODO sin(x-pi)
 # TODO buttons from keyboards adding at back of inputfield
 # TODO add eg. x=5
 # TODO sqrt(-1)
