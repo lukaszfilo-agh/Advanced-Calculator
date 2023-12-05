@@ -15,7 +15,8 @@ from PyQt6.QtWidgets import (
     QStatusBar
 )
 
-from plot_draw import PlotWindow
+from plot_window import PlotWindow
+from matrix_window import MatrixWindow
 
 # Window size:
 WINDOW_WIDTH = 575
@@ -33,6 +34,7 @@ class CalcMainWindow(QMainWindow):
 
         # Other windows needed in the future:
         self.plot_window: Optional[QWidget] = None
+        self.matrix_window: Optional[QWidget] = None
 
         # Display widget:
         self.__display_field: Optional[QWidget] = None
@@ -248,6 +250,11 @@ class CalcMainWindow(QMainWindow):
             plot_calc_button.setStatusTip("Open plot calc")
             plot_calc_button.triggered.connect(self.__draw_plot_window)
 
+            # Matrix calc button:
+            matrix_window_button = QAction("&Matrix calculator", self)
+            matrix_window_button.setStatusTip("Open matrix calculator")
+            matrix_window_button.triggered.connect(self.__draw_matrix_window)
+
             # Exit Button:
             exit_button = QAction("&Quit", self)
             exit_button.setStatusTip("Quit app")
@@ -256,6 +263,7 @@ class CalcMainWindow(QMainWindow):
             # Adding buttons to toolbar
             toolbar.addAction(sample_button)
             toolbar.addAction(plot_calc_button)
+            toolbar.addAction(matrix_window_button)
             toolbar.addAction(exit_button)
 
         create_sample_buttons()
@@ -1069,6 +1077,12 @@ class CalcMainWindow(QMainWindow):
         self.plot_window.show()
         self.hide()
         print('Plotter opened')
+
+    def __draw_matrix_window(self):
+        self.matrix_window = MatrixWindow(self)
+        self.matrix_window.show()
+        self.hide()
+        print('Matrix opened')
 
     def __sample_button_click(self, s):
         print('button clicked')
