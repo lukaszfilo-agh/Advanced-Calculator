@@ -18,12 +18,13 @@ from PyQt6.QtWidgets import (
 from plot_draw import PlotWindow
 
 # Window size:
-WINDOW_WIDTH = 400
+WINDOW_WIDTH = 575
 WINDOW_HEIGHT = 600
 
 # Max number of digits in display:
-MAX_DIGITS = 13
+MAX_DIGITS = 19
 
+# TODO: sqrt nie dziala do konca poprawnie (ujemne wartosci - zastanowic sie przy kazdej ewaluacji), upiekszyc wyglad, optymalizacja kodu.
 
 # Subclass QMainWindow application main window
 class CalcMainWindow(QMainWindow):
@@ -65,8 +66,14 @@ class CalcMainWindow(QMainWindow):
         # Label for results display:
         self.__display_field = QLabel("")
 
-        # Label for overflow management:
+        # Enabling to copy from field:
+        self.__display_field.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+
+        # Label for operations:
         self.__operations_field = QLabel("")
+
+        # Enabling to copy from field:
+        self.__operations_field.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
 
         # Helper to get buttons layout and connect them to action management function:
         def get_buttons_layout() -> QVBoxLayout:
@@ -114,7 +121,7 @@ class CalcMainWindow(QMainWindow):
             button_log.setFont(font)
             button_measurable = QPushButton("1/x", self)
             button_measurable.setFont(font)
-            button_squared = QPushButton("x**2", self)
+            button_squared = QPushButton("x^2", self)
             button_squared.setFont(font)
             button_sq_root = QPushButton("sqrt(x)", self)
             button_sq_root.setFont(font)
@@ -138,7 +145,7 @@ class CalcMainWindow(QMainWindow):
             forth_line = [button_x_y, button_7, button_8, button_9, button_x]
 
             # Fifth line:
-            button_x_sqrt_y = QPushButton("ysqrt(x)", self)
+            button_x_sqrt_y = QPushButton("yroot(x)", self)
             button_x_sqrt_y.setFont(font)
             button_4 = QPushButton("4", self)
             button_4.setFont(font)
@@ -185,8 +192,9 @@ class CalcMainWindow(QMainWindow):
             # Connecting buttons to operations manager and adding shortcuts:
             for button in buttons:
                 button.clicked.connect(self.__manage_clicks)
+                button.setFixedSize(110, 30)
                 if button.text() in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
-                                     "+", "-", "=", "/", "x", "<-", "C", "."]:
+                                     "+", "-", "=", "/", "x", "<-", "C", ".", "x^y"]:
                     if button.text() == "x":
                         button.setShortcut("*")
                     elif button.text() == "<-":
@@ -195,6 +203,8 @@ class CalcMainWindow(QMainWindow):
                         button.setShortcut(Qt.Key.Key_Return)
                     elif button.text() == "C":
                         button.setShortcut(Qt.Key.Key_Delete)
+                    elif button.text() == "x^y":
+                        button.setShortcut("^")
                     else:
                         button.setShortcut(button.text())
             # Gathering all lines and lines layouts:
@@ -274,7 +284,6 @@ class CalcMainWindow(QMainWindow):
 
         # Helper function which rounds if there are too many digits after evaluation:
         def terminate_too_many_digits_after_dot(num: Union[float, str], e: str = None) -> Union[float, str]:
-
             # if we have float - only evaluated value:
             if isinstance(num, float):
                 # Index of dot point:
@@ -290,7 +299,7 @@ class CalcMainWindow(QMainWindow):
             # Rounding to max possible digits including e format length:
             rounding_to = MAX_DIGITS - idx_dot_point - 1 - len(e)
 
-            return str(round(float(num), rounding_to))
+            return str(round(eval(num), rounding_to))
 
         # Helper function which rounds if there are too many digits in display after adding minus:
         def terminate_too_many_digits(num: int) -> int:
@@ -299,27 +308,25 @@ class CalcMainWindow(QMainWindow):
 
         # Helper function which changes number to string e notation:
         def change_format_for_large_nums(num: Union[int, float]) -> str:
-            return "{:e}".format(num)
+            n = MAX_DIGITS if len(str(num)) > MAX_DIGITS else len(str(num))
+            return "{:.{}e}".format(num, n)
 
         # Helper function to get e format:
-        def get_e_format(num: Union[int, float]) -> str:
+        def get_e_format(val: Union[int, float]) -> str:
             e_format = ""
 
             # Fixing overflow after evaluation:
-            if len(str(num)) >= MAX_DIGITS:
+            if len(str(val)) >= MAX_DIGITS:
 
                 # Block too small e:
-                if 1e-8 < num < 1e11:
+                if 1e-8 < abs(val) < 1e11:
                     return ""
 
-                e_format = change_format_for_large_nums(num)
-
+                e_format = change_format_for_large_nums(val)
                 # if we take too much display space with e format:
                 if len(e_format) >= MAX_DIGITS:
                     # We get the position of e - beginning of our format:
                     e_ind = e_format.index("e")
-
-                    # We separate number for e:
                     num = e_format[:e_ind]
                     e = e_format[e_ind:]
 
@@ -332,6 +339,10 @@ class CalcMainWindow(QMainWindow):
 
         # Helper function which reoccurs in different cases of "=" operator:
         def set_displays_after_op_eq(value: Union[float, int]) -> None:
+            # Check for complex results - throw an exception:
+            if isinstance(value, complex):
+                raise ValueError
+
             # Protection against adding dot point even when it's not necessary:
             value = manage_immediate_dot_point_after_eval(value)
 
@@ -390,7 +401,7 @@ class CalcMainWindow(QMainWindow):
             operation = None
             if button_name == "1/x":
                 operation = lambda x: 1 / x
-            elif button_name == "x**2":
+            elif button_name == "x^2":
                 operation = lambda x: x ** 2
             elif button_name == "sqrt(x)":
                 operation = lambda x: math.sqrt(x)
@@ -406,7 +417,6 @@ class CalcMainWindow(QMainWindow):
                 operation = lambda x: math.log10(x)
             elif button_name == "10^x":
                 operation = lambda x: 10 ** x
-
 
             # We have entered digits but have yet to perform any operation:
             if self.__str_val != "" and self.__str_val_operations == "":
@@ -511,17 +521,22 @@ class CalcMainWindow(QMainWindow):
             elif self.__str_val_operations != "" and (self.__str_val_operations[-1] in ["/", "*", "-", "+", "^"] or
                                                       "root" in self.__str_val_operations or "mod" in self.__str_val_operations or
                                                       "log base" in self.__str_val_operations):
-                # We haven't entered any digits -
-                # evaluate 1/x on str_val and perform operation with given op (enter result in str_val):
+                # We haven't entered any digits:
                 if self.__str_val == "":
-                    if button_name == "10^x" and float(self.__str_val_operations[:-1]) > 1e6:
+
+                    # Evaluate - only the number:
+                    if "root" in self.__str_val_operations:
+                        l = len("root")
+                    elif "mod" in self.__str_val_operations:
+                        l = len("mod")
+                    elif "log base" in self.__str_val_operations:
+                        l = len("log base")
+                    else:
+                        l = 1
+                    if button_name == "10^x" and float(self.__str_val_operations[:-l]) > 1e6:
                         handle_overflow_err()
                         return
-                        # Evaluate - only the number:
-                    if self.__str_val_operations[-2:] == "**":
-                        eval_str = eval(self.__str_val_operations[:-2])
-                    else:
-                        eval_str = eval(self.__str_val_operations[:-1])
+                    eval_str = eval(self.__str_val_operations[:-l])
                     eval_str = operation(eval_str)
 
                     # Protecting against unnecessary parsing:
@@ -542,7 +557,7 @@ class CalcMainWindow(QMainWindow):
                     else:
                         self.__display_field.setText(self.__str_val)
                     # Str_val_operations remains as it was:
-                # Else we have str_val - perform 1/x on it:
+                # Else we have str_val:
                 else:
                     if button_name == "10^x" and float(self.__str_val) > 1e6:
                         handle_overflow_err()
@@ -573,10 +588,6 @@ class CalcMainWindow(QMainWindow):
 
         # Helper function managing binary operators on buttons:
         def manage_binary_operators(eval_str: Union[int, float], op: str) -> None:
-            # Check for complex results - throw an exception:
-            if isinstance(eval_str, complex):
-                raise ValueError
-
             # Protection against adding dot point even when it's not necessary:
             eval_str = manage_immediate_dot_point_after_eval(eval_str)
 
@@ -662,10 +673,10 @@ class CalcMainWindow(QMainWindow):
         elif sender.text() == "=":
             # If there is an operator in str_val_operations:
             if len(self.__str_val_operations) > 0 and (self.__str_val_operations[-1] in ["/", "*", "-", "+", "^"] or
-                                                       "root" in self.__str_val_operations or "mod" in self.__str_val_operations
-                                                       or "log base" in self.__str_val_operations):
+                                                       "root" in self.__str_val_operations or
+                                                       "mod" in self.__str_val_operations or
+                                                       "log base" in self.__str_val_operations):
                 # Get binary operator:
-                op = ""
                 if "root" in self.__str_val_operations:
                     op = "root"
                 elif "mod" in self.__str_val_operations:
@@ -682,13 +693,13 @@ class CalcMainWindow(QMainWindow):
 
                         # We perform operations on numbers:
                         if op == "root":
-                            eval_str = eval(f"{num}**{num}")
+                            eval_str = eval(f"pow({num}, (1/{num}))")
                         elif op == "mod":
-                            eval_str = eval(f"{num}%{num}")
+                            eval_str = eval(f"({num})%({num})")
                         elif op == "log base":
                             eval_str = eval(f"math.log({num},{num})")
                         elif op == "^":
-                            eval_str = eval(f"{num}**{num}")
+                            eval_str = eval(f"({num})**({num})")
                         else:
                             num += op + num
                             eval_str = eval(num)
@@ -708,13 +719,13 @@ class CalcMainWindow(QMainWindow):
 
                         # We perform operations on numbers:
                         if op == "root":
-                            eval_str = eval(f"{f_n}**{s_n}")
+                            eval_str = eval(f"pow({f_n}, (1/{s_n}))")
                         elif op == "mod":
-                            eval_str = eval(f"{f_n}%{s_n}")
+                            eval_str = eval(f"({f_n})%({s_n})")
                         elif op == "log base":
                             eval_str = eval(f"math.log({f_n},{s_n})")
                         elif op == "^":
-                            eval_str = eval(f"{f_n}**{s_n}")
+                            eval_str = eval(f"({f_n})**({s_n})")
                         else:
                             num = f_n + op + s_n
                             eval_str = eval(num)
@@ -725,6 +736,8 @@ class CalcMainWindow(QMainWindow):
                     handle_zero_division_err()
                 except OverflowError:
                     handle_overflow_err()
+                except ValueError:
+                    handle_value_err()
             # Else - we simply keep the number (nothing to evaluate on):
             else:
                 pass
@@ -760,10 +773,10 @@ class CalcMainWindow(QMainWindow):
                 # Change value at display:
                 self.__display_field.setText(self.__str_val)
         # Binary operators in sender:
-        elif sender.text() in ["/", "x", "-", "+", "mod", "x^y", "ysqrt(x)", "logy(x)"]:
+        elif sender.text() in ["/", "x", "-", "+", "mod", "x^y", "yroot(x)", "logy(x)"]:
             op = ""
             # Get operators:
-            if sender.text() == "ysqrt(x)":
+            if sender.text() == "yroot(x)":
                 op = "root"
             elif sender.text() == "logy(x)":
                 op = "log base"
@@ -848,7 +861,7 @@ class CalcMainWindow(QMainWindow):
                             # Second number:
                             s_n = self.__str_val
 
-                            eval_str = eval(f"({f_n})" + f"**(1/({s_n}))")
+                            eval_str = eval(f"pow({f_n}, 1/{s_n})")
                             manage_binary_operators(eval_str, op)
 
                         elif "log base" in self.__str_val_operations:
@@ -881,7 +894,7 @@ class CalcMainWindow(QMainWindow):
                             # Second number:
                             s_n = self.__str_val
 
-                            eval_str = eval(f"{f_n}%{s_n}")
+                            eval_str = eval(f"({f_n})%({s_n})")
 
                             manage_binary_operators(eval_str, op)
 
@@ -898,7 +911,7 @@ class CalcMainWindow(QMainWindow):
                             # Second number:
                             s_n = self.__str_val
 
-                            eval_str = eval(f"{f_n}**{s_n}")
+                            eval_str = eval(f"({f_n})**({s_n})")
 
                             manage_binary_operators(eval_str, op)
 
@@ -917,9 +930,8 @@ class CalcMainWindow(QMainWindow):
                         handle_value_err()
                     except OverflowError:
                         handle_overflow_err()
-
         # Unary operators in sender:
-        elif sender.text() in ["1/x", "x**2", "sqrt(x)", "|x|", "n!", "e^x", "ln", "log", "10^x"]:
+        elif sender.text() in ["1/x", "x^2", "sqrt(x)", "|x|", "n!", "e^x", "ln", "log", "10^x"]:
             # Protect against trying to do operation over string:
             if self.__display_field.text() not in ["ZERO DIVISION", "INVALID INPUT", "INF"]:
                 # Trying for zero division and sqrt of negative values:
@@ -940,7 +952,6 @@ class CalcMainWindow(QMainWindow):
                     self.__str_val = self.__str_val[1:]
                 else:
                     self.__str_val = "-" + self.__str_val
-                    val = 0
                     dot = ""
                     # If there's no dot:
                     if "." not in self.__str_val:
@@ -975,80 +986,56 @@ class CalcMainWindow(QMainWindow):
                 # We have operations value:
                 if self.__str_val_operations != "":
                     bin_op = ""
-                    e_format = ""
-                    # If there's an operator:
-                    if self.__str_val_operations[-2:] == "**":
-                        bin_op = "**"
-                        self.__str_val_operations = self.__str_val_operations[:-2]
-                    elif self.__str_val_operations[-1] in ["/", "*", "-", "+", "%"]:
-                        # We remember it in bin_op variable, but delete it from str_val_operations:
+                    # If there's an operator - keep it:
+                    if "root" in self.__str_val_operations:
+                        bin_op = "root"
+                    elif "mod" in self.__str_val_operations:
+                        bin_op = "mod"
+                    elif "log base" in self.__str_val_operations:
+                        bin_op = "log base"
+                    elif self.__str_val_operations[-1] in ["+", "-", "/", "*", "^"]:
                         bin_op = self.__str_val_operations[-1]
-                        self.__str_val_operations = self.__str_val_operations[:-1]
+
+                    if bin_op != "":
+                        # Get idx of bin_op and delete it:
+                        idx = self.__str_val_operations.index(bin_op)
+                        self.__str_val_operations = self.__str_val_operations[:idx]
+
                     # We change its sign:
                     if self.__str_val_operations[0] == "-":
                         self.__str_val_operations = self.__str_val_operations[1:]
                         if "." not in self.__str_val_operations and "e-" not in self.__str_val_operations:
+
                             # We get int:
                             val = int(self.__str_val_operations)
-                            # If we have too many digits in display, we terminate them:
-                            if len(str(val)) >= MAX_DIGITS + 1:
-                                val = terminate_too_many_digits(val)
-
-                            # Getting e format:
-                            e_format = get_e_format(val)
                         # Else - there's dot:
                         else:
                             # We get float:
                             val = float(self.__str_val_operations)
-
-                            # If we have too many digits in display (excluding dot)
-                            if len(str(val)) >= MAX_DIGITS:
-                                val = terminate_too_many_digits_after_dot(val)
-                            # Getting e format:
-                            e_format = get_e_format(val)
-                        # Set str_val_operations and add bin_op if there's one:
-                        self.__str_val_operations = self.__str_val_operations + bin_op
                     else:
                         self.__str_val_operations = "-" + self.__str_val_operations
                         # If there's no dot:
                         if "." not in self.__str_val_operations and "e-" not in self.__str_val_operations:
                             # We get int:
                             val = int(self.__str_val_operations)
-
-                            # If we have too many digits in display, we terminate them:
-                            if len(str(val)) >= MAX_DIGITS + 1:
-                                val = terminate_too_many_digits(val)
-
-                            # Getting e format:
-                            e_format = get_e_format(val)
                         # Else - there's dot:
                         else:
                             # We get float:
                             val = float(self.__str_val_operations)
 
-                            # If we have too many digits in display (excluding dot)
-                            if len(str(val)) >= MAX_DIGITS:
-                                val = terminate_too_many_digits_after_dot(val)
-                            # Getting e format:
-                            e_format = get_e_format(val)
-                        # Set str_val_operations and add operator (if there's one):
-                        self.__str_val_operations = str(val) + bin_op
-
+                    # Getting e format:
+                    e_format = get_e_format(val)
                     # We have e format:
                     if e_format != "":
                         self.__display_field.setText(e_format)
-                        self.__operations_field.setText(e_format if bin_op == "" else e_format + bin_op)
+                        self.__operations_field.setText(e_format + bin_op)
                     # Else - no e format:
                     else:
-                        # Display (set display field without operator if there's one):
-                        if bin_op == "":
-                            self.__display_field.setText(self.__str_val_operations)
-                        else:
-                            if bin_op == "**":
-                                self.__display_field.setText(self.__str_val_operations[:-2])
-                            else:
-                                self.__display_field.setText(self.__str_val_operations[:-1])
-                        self.__operations_field.setText(self.__str_val_operations)
+                        self.__display_field.setText(self.__str_val_operations)
+                        self.__operations_field.setText(self.__str_val_operations + bin_op)
+
+                    # Set str_val_operations and add operator (if there's one):
+                    self.__str_val_operations = str(val) + bin_op
         # . in sender:
         elif sender.text() == ".":
             # if we entered a value and: there is no dot already, we won't exceed display after adding dot, we don't have e format in display:
@@ -1063,12 +1050,16 @@ class CalcMainWindow(QMainWindow):
                 val = math.pi
             val = terminate_too_many_digits_after_dot(val)
             if self.__str_val_operations == "" or (
-                    self.__str_val_operations != "" and (self.__str_val_operations[-1] in ["/", "*", "-", "+", "%"] or
-                                                         self.__str_val_operations[-2:] == "**")):
+                    self.__str_val_operations != "" and (self.__str_val_operations[-1] in ["/", "*", "-", "+", "^"] or
+                                                         "root" in self.__str_val_operations or
+                                                         "mod" in self.__str_val_operations or
+                                                         "log base" in self.__str_val_operations)):
                 self.__str_val = str(val)
                 self.__display_field.setText(self.__str_val)
-            elif self.__str_val_operations != "" and (self.__str_val_operations[-1] not in ["/", "x", "-", "+", "%"] and
-                                                      self.__str_val_operations[-2:] != "**"):
+            elif self.__str_val_operations != "" and (self.__str_val_operations[-1] not in ["/", "x", "-", "+", "^"] and
+                                                      "root" not in self.__str_val_operations and
+                                                      "mod" not in self.__str_val_operations and
+                                                      "log base" not in self.__str_val_operations):
                 self.__str_val_operations = str(val)
                 self.__display_field.setText(self.__str_val_operations)
                 self.__operations_field.setText(self.__str_val_operations)
