@@ -25,7 +25,6 @@ WINDOW_HEIGHT = 600
 # Max number of digits in display:
 MAX_DIGITS = 19
 
-# TODO: sqrt nie dziala do konca poprawnie (ujemne wartosci - zastanowic sie przy kazdej ewaluacji), upiekszyc wyglad, optymalizacja kodu.
 
 # Subclass QMainWindow application main window
 class CalcMainWindow(QMainWindow):
@@ -54,9 +53,6 @@ class CalcMainWindow(QMainWindow):
 
         # Center window:
         self.__center()
-
-        # Dark, black:
-        # self.setStyleSheet("background-color: #181818")
 
         # Layouts:
         final_layout = QVBoxLayout()
@@ -227,11 +223,6 @@ class CalcMainWindow(QMainWindow):
 
         font.setPointSize(12)
         self.__operations_field.setFont(font)
-
-        # White:
-        # field.setStyleSheet("color: #FFFFFF")
-        # Black:
-        # field.setStyleSheet("background-color: #181818")
 
         # Toolbar
         toolbar = QToolBar("Main toolbar")
@@ -951,7 +942,7 @@ class CalcMainWindow(QMainWindow):
                     handle_value_err()
                 except OverflowError:
                     handle_overflow_err()
-        # +/- in sender: - FIX WRAPPING IN E FORMAT TOO SOON!
+        # +/- in sender:
         elif sender.text() == "+/-":
             # If we entered a value:
             if self.__str_val != "":
@@ -1046,7 +1037,8 @@ class CalcMainWindow(QMainWindow):
                     self.__str_val_operations = str(val) + bin_op
         # . in sender:
         elif sender.text() == ".":
-            # if we entered a value and: there is no dot already, we won't exceed display after adding dot, we don't have e format in display:
+            # if we entered a value and: 
+            # there is no dot already, we won't exceed display after adding dot, we don't have e format in display:
             if self.__str_val != "" and "." not in self.__str_val and len(
                     self.__str_val) <= MAX_DIGITS - 2 and "e" not in self.__display_field.text():
                 self.__str_val += "."
