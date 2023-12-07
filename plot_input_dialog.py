@@ -4,7 +4,8 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QDialog,
-    QLineEdit
+    QLineEdit,
+    QMessageBox
 )
 
 from PyQt6.QtCore import Qt, QEvent
@@ -12,8 +13,11 @@ from PyQt6.QtCore import Qt, QEvent
 import matplotlib
 matplotlib.use('QtAgg')
 
-# Class for input dialog
+import re
+
+
 class PlotInputDialog(QDialog):
+    # Class for input dialog
     def __init__(self):
         super().__init__()
         # Calling function to initialize UI
@@ -32,7 +36,7 @@ class PlotInputDialog(QDialog):
         self.input_fields = [
             CustomLineEdit(),  # Function input
             CustomLineEdit(),  # Lower limit input
-            CustomLineEdit()  # Upper limit input
+            CustomLineEdit()   # Upper limit input
         ]
 
         # Input fields labels
@@ -156,7 +160,51 @@ class PlotInputDialog(QDialog):
             self.buttons_layout.addLayout(row_layout)
 
     def getInputs(self):
-        return tuple(input.text() for input in self.input_fields)
+        function_str, lim1, lim2 = tuple(input.text() for input in self.input_fields)
+
+        try:
+            if len(function_str) == 0 or len(lim1) == 0 or len(lim2) == 0:
+                    raise EmptyInputError
+        
+            # Checking for illegal charaters in function str
+            invalid_chars = func_bad_chars(function_str)
+            if len(invalid_chars) != 0:
+                raise InvalidCharacters(function_str)
+            
+            # Checking for illegal charaters in lim str
+            lim1_invalid_chars = lim_bad_chars(lim1)
+            lim2_invalid_chars = lim_bad_chars(lim2)
+
+            if len(lim1_invalid_chars) != 0 or len(lim2_invalid_chars) != 0:
+                raise LimError(lim1, lim2, 0)
+            
+            lim1 = convert_lim_math(lim1)
+            lim2 = convert_lim_math(lim2)
+
+            # Conversion of lim1 and lim2
+            lim1 = eval(lim1)
+            lim2 = eval(lim2)
+
+            # Checking for limit error
+            if lim1 > lim2:
+                raise LimError(lim1, lim2, 1)
+            
+            # Creating expression for eval
+            function_math = convert_func_math(function_str)
+
+        # Catching errors for empty data
+        except EmptyInputError:
+            return None, None, None, None
+        
+        # Catching errors for invalid chars
+        except InvalidCharacters:
+            return None, None, None, None
+        
+        # Catching errors for LimErrors
+        except LimError:
+            return None, None, None, None
+        
+        return function_math, function_str, lim1, lim2
 
 # Class for custom line edit with keyboard filtering
 class CustomLineEdit(QLineEdit):
@@ -178,3 +226,122 @@ class CustomLineEdit(QLineEdit):
         print(event.key())
         if event.text().isdigit() or event.key() in allowed_keys:
             super().keyPressEvent(event)
+
+class EmptyInputError(Exception):
+    "Raised when data input is NULL"
+
+    def __init__(self) -> None:
+        super().__init__()
+        message_box = QMessageBox()
+        message_box.setWindowTitle("ERROR")
+        message_box.setText(f"Input cannot be empty.")
+        print("Input empty")
+        result = message_box.exec()
+        if result == QMessageBox.StandardButton.Ok:
+            print("Error closed")
+
+
+class InvalidCharacters(Exception):
+    "Raised when the input can't be evaluated"
+
+    def __init__(self, str) -> None:
+        super().__init__()
+        message_box = QMessageBox()
+        message_box.setWindowTitle("ERROR")
+        message_box.setText(f"You have entered invalid input: {str}.")
+        print("Invalid chars")
+        result = message_box.exec()
+        if result == QMessageBox.StandardButton.Ok:
+            print("Error closed")
+
+
+class LimError(Exception):
+    "Raised when limit error is detected"
+
+    def __init__(self, lim1, lim2, flag) -> None:
+        super().__init__()
+        message_box = QMessageBox()
+        message_box.setWindowTitle("ERROR")
+        if flag == 0:
+            message_box.setText(f"Limit error. {lim1}, {lim2}")
+        elif flag == 1:
+            message_box.setText(f"Lower limit is greater than upper limit.")
+        print("Error limits")
+        result = message_box.exec()
+        if result == QMessageBox.StandardButton.Ok:
+            print("Error closed")
+
+
+def func_bad_chars(expression):
+    result = re.findall(
+        r'(?!(?:sin|arcsin|cos|arccos|tg|arctg|ctg|arctg|sqrt|e\^|\d+|[\(\)\+\-\*\/\^]|\dx|x))\b\S+\b', expression)
+    return result
+
+def lim_bad_chars(expression):
+    result = re.findall(r'[^0-9eπ\-]', expression)
+    return result
+
+
+def convert_lim_math(expression):
+    # Change 'π' to '*π'
+    expression = re.sub(r'(\d)(π)', r'\1*\2', expression)
+
+    # Change 'e' to '*e'
+    expression = re.sub(r'(\d)(e)', r'\1*\2', expression)
+
+    # Change 'π' to 'np.pi'
+    expression = re.sub(r'\bπ\b', 'np.pi', expression)
+
+    # Change 'e' to 'np.e'
+    expression = re.sub(r'\be\b', 'np.e', expression)
+
+    return expression
+
+def convert_func_math(expression):
+    # Change 'e^x' to 'np.exp(x)'
+    expression = re.sub(r'e\^(.*)', r'np.exp(\1)', expression)
+
+    # Change 'e^x' to 'np.exp(x)'
+    expression = re.sub(r'\|(.*)\|', r'np.abs(\1)', expression)
+
+    # Change 'sqrt()' to np.sqrt()
+    expression = re.sub(r'sqrt\b', 'np.sqrt', expression)
+
+    # Change 'sin' to 'np.sin'
+    expression = re.sub(r'sin\b', 'np.sin', expression)
+
+    # Change 'arcsin' to 'np.arcsin'
+    expression = re.sub(r'arcsin\b', 'np.arcsin', expression)
+
+    # Change 'cos' to 'np.cos'
+    expression = re.sub(r'cos\b', 'np.cos', expression)
+
+    # Change 'arccos' to 'np.arccos'
+    expression = re.sub(r'arccos\b', 'np.arccos', expression)
+
+    # Change 'tg' to 'np.tan'
+    expression = re.sub(r'tg\b', 'np.tan', expression)
+
+    # Change 'arctg' to 'np.arctan'
+    expression = re.sub(r'arctg\b', 'np.arctan', expression)
+
+    # Change 'ctg' to '1/np.tan'
+    expression = re.sub(r'ctg\b', '1/np.tan', expression)
+
+    # Change 'x' to '*x'
+    expression = re.sub(r'(\d)(x)', r'\1*\2', expression)
+
+    # Change '^' to '**'
+    expression = expression.replace('^', '**')
+
+    # Change ')(' to ')*('
+    expression = expression.replace(')(', ')*(')
+
+    # Adding multiplication sing in 'x(' or ')x'
+    expression = re.sub(r'([1-9x])(\()', r'\1*\2', expression)
+    expression = re.sub(r'(\))([1-9x])', r'\1*\2', expression)
+
+    # Change '\d np.' to '\d*np.'
+    expression = re.sub(r'(\d)(np)', r'\1*\2', expression)
+
+    return expression
