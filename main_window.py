@@ -587,6 +587,11 @@ class CalcMainWindow(QMainWindow):
 
         # Helper function managing binary operators on buttons:
         def manage_binary_operators(eval_str: Union[int, float], op: str) -> None:
+
+            # Check for complex results - throw an exception:
+            if isinstance(eval_str, complex):
+                raise ValueError
+
             # Protection against adding dot point even when it's not necessary:
             eval_str = manage_immediate_dot_point_after_eval(eval_str)
 
@@ -692,13 +697,35 @@ class CalcMainWindow(QMainWindow):
 
                         # We perform operations on numbers:
                         if op == "root":
-                            eval_str = eval(f"pow({num}, (1/{num}))")
+                            # Root is odd:
+                            if eval(num) % 2 != 0:
+                                # If number is negative and odd (we have odd root) - we can perform the operation:
+                                if eval(num) < 0:
+                                    eval_str = eval(f"pow({num[1:]}, (1/{num}))")
+                                    eval_str *= -1
+                                else:
+                                    eval_str = eval(f"pow({num}, (1/{num}))")
+                            else:
+                                eval_str = eval(f"pow({num}, (1/{num}))")
                         elif op == "mod":
                             eval_str = eval(f"({num})%({num})")
                         elif op == "log base":
                             eval_str = eval(f"math.log({num},{num})")
                         elif op == "^":
-                            eval_str = eval(f"({num})**({num})")
+                            # If the root value is a fraction:
+                            if abs(eval(num)) < 1:
+                                # 1 over root is odd:
+                                if (1 / eval(num)) % 2 != 0:
+                                    # If first number is negative:
+                                    if eval(num) < 0:
+                                        eval_str = eval(f"({num[1:]})**({num})")
+                                        eval_str *= -1
+                                    else:
+                                        eval_str = eval(f"({num})**({num})")
+                                else:
+                                    eval_str = eval(f"({num})**({num})")
+                            else:
+                                eval_str = eval(f"({num})**({num})")
                         else:
                             num += op + num
                             eval_str = eval(num)
@@ -718,13 +745,35 @@ class CalcMainWindow(QMainWindow):
 
                         # We perform operations on numbers:
                         if op == "root":
-                            eval_str = eval(f"pow({f_n}, (1/{s_n}))")
+                            # Root is odd:
+                            if eval(s_n) % 2 != 0:
+                                # If first number is negative:
+                                if eval(f_n) < 0:
+                                    eval_str = eval(f"pow({f_n[1:]}, (1/{s_n}))")
+                                    eval_str *= -1
+                                else:
+                                    eval_str = eval(f"pow({f_n}, (1/{s_n}))")
+                            else:
+                                eval_str = eval(f"pow({f_n}, (1/{s_n}))")
                         elif op == "mod":
                             eval_str = eval(f"({f_n})%({s_n})")
                         elif op == "log base":
                             eval_str = eval(f"math.log({f_n},{s_n})")
                         elif op == "^":
-                            eval_str = eval(f"({f_n})**({s_n})")
+                            # If the root value is a fraction:
+                            if abs(eval(s_n)) < 1:
+                                # 1 over root is odd:
+                                if (1 / eval(s_n)) % 2 != 0:
+                                    # If first number is negative:
+                                    if eval(f_n) < 0:
+                                        eval_str = eval(f"({f_n[1:]})**({s_n})")
+                                        eval_str *= -1
+                                    else:
+                                        eval_str = eval(f"({f_n})**({s_n})")
+                                else:
+                                    eval_str = eval(f"({f_n})**({s_n})")
+                            else:
+                                eval_str = eval(f"({f_n})**({s_n})")
                         else:
                             num = f_n + op + s_n
                             eval_str = eval(num)
@@ -860,7 +909,17 @@ class CalcMainWindow(QMainWindow):
                             # Second number:
                             s_n = self.__str_val
 
-                            eval_str = eval(f"pow({f_n}, 1/{s_n})")
+                            # Root is odd:
+                            if eval(s_n) % 2 != 0:
+                                # If first number is negative:
+                                if eval(f_n) < 0:
+                                    eval_str = eval(f"pow({f_n[1:]}, (1/{s_n}))")
+                                    eval_str *= -1
+                                else:
+                                    eval_str = eval(f"pow({f_n}, (1/{s_n}))")
+                            else:
+                                eval_str = eval(f"pow({f_n}, (1/{s_n}))")
+
                             manage_binary_operators(eval_str, op)
 
                         elif "log base" in self.__str_val_operations:
@@ -910,7 +969,20 @@ class CalcMainWindow(QMainWindow):
                             # Second number:
                             s_n = self.__str_val
 
-                            eval_str = eval(f"({f_n})**({s_n})")
+                            # If the root value is a fraction:
+                            if abs(eval(s_n)) < 1:
+                                # 1 over root is odd:
+                                if (1 / eval(s_n)) % 2 != 0:
+                                    # If first number is negative:
+                                    if eval(f_n) < 0:
+                                        eval_str = eval(f"({f_n[1:]})**({s_n})")
+                                        eval_str *= -1
+                                    else:
+                                        eval_str = eval(f"({f_n})**({s_n})")
+                                else:
+                                    eval_str = eval(f"({f_n})**({s_n})")
+                            else:
+                                eval_str = eval(f"({f_n})**({s_n})")
 
                             manage_binary_operators(eval_str, op)
 
