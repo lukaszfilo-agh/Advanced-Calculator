@@ -15,6 +15,7 @@ matplotlib.use('QtAgg')
 
 import re
 
+import numpy as np
 
 class PlotInputDialog(QDialog):
     # Class for input dialog
@@ -274,7 +275,7 @@ class LimError(Exception):
 
 def func_bad_chars(expression):
     result = re.findall(
-        r'(?!(?:sin|arcsin|cos|arccos|tg|arctg|ctg|arctg|sqrt|e\^|\d+|[\(\)\+\-\*\/\^]|\dx|x))\b\S+\b', expression)
+        r'(?!(?:sin|arcsin|cos|arccos|tg|arctg|ctg|arctg|sqrt|e\^|\d+|[\(\)\+\-\*\/\^]|\dx|x|π))\b\S+\b', expression)
     return result
 
 def lim_bad_chars(expression):
@@ -343,5 +344,8 @@ def convert_func_math(expression):
 
     # Change '\d np.' to '\d*np.'
     expression = re.sub(r'(\d)(np)', r'\1*\2', expression)
+
+    # Change 'π' to 'np.pi'
+    expression = re.sub(r'\bπ\b', 'np.pi', expression)
 
     return expression
