@@ -4,9 +4,12 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
     QPushButton,
-    QTextEdit
+    QTextEdit,
+    QLabel,
+    QApplication
 )
 
+from PyQt6.QtCore import Qt
 
 import numpy as np
 
@@ -19,13 +22,16 @@ class MatrixWindow(QWidget):
         super().__init__()
         self.parent = menu_window
 
+        # Creating variables for matrices
         self.matrix1 = None
         self.matrix2 = None
 
         # Setting name of window
         self.setWindowTitle("Matrix Calculator")
         # Rezisizing window
-        self.resize(600, 600)
+        self.resize(600, 800)
+        # Centering window
+        self.center()
 
         # Button for inserting data matrix 1
         matrix1_button = QPushButton("Insert Matrix 1")
@@ -36,11 +42,16 @@ class MatrixWindow(QWidget):
         matrix2_button.clicked.connect(self.matrix2_input)
 
         # Creating top layout for buttons
-        top_layout = QHBoxLayout()
+        data_buttons_layout = QHBoxLayout()
 
         # Adding buttons to top widget
-        top_layout.addWidget(matrix1_button)
-        top_layout.addWidget(matrix2_button)
+        data_buttons_layout.addWidget(matrix1_button)
+        data_buttons_layout.addWidget(matrix2_button)
+
+        # Creating labels for matrices
+        matrix1_label = QLabel('Matrix 1')
+        matrix2_label = QLabel('Matrix 2')
+        matrix_result_label = QLabel('Result')
 
         # Adding matrix1 display
         self.matrix1_text = QTextEdit()
@@ -50,21 +61,50 @@ class MatrixWindow(QWidget):
         self.matrix2_text = QTextEdit()
         self.matrix2_text.setReadOnly(True)
 
+        # Adding result display
+        self.matrix_result_text = QTextEdit()
+        self.matrix_result_text.setReadOnly(True)
+
         # Creating layout for matrix show
         matrix_layout = QHBoxLayout()
+        
+        # Creating layout for matrix 1
+        matrix1_layout = QVBoxLayout()
 
-        # Ading matrices to layout
-        matrix_layout.addWidget(self.matrix1_text)
-        matrix_layout.addWidget(self.matrix2_text)
+        # Adding label and matrix to layout
+        matrix1_layout.addWidget(matrix1_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        matrix1_layout.addWidget(self.matrix1_text)
+
+        # Creating layout for matrix 2
+        matrix2_layout = QVBoxLayout()
+
+        # Adding label and matrix to layout
+        matrix2_layout.addWidget(matrix2_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        matrix2_layout.addWidget(self.matrix2_text)
+        
+        # Ading matrices layout to matrices layout
+        matrix_layout.addLayout(matrix1_layout)
+        matrix_layout.addLayout(matrix2_layout)
+
+        # Create button for going back to menu
+        back_button = QPushButton("Back to Main Window")
+        back_button.clicked.connect(self.back_to_menu)
 
         # Creating main layout
         main_layout = QVBoxLayout()
 
-        # Adding top widget to main layout
-        main_layout.addLayout(top_layout)
-
         # Adding matrix show to main layout
         main_layout.addLayout(matrix_layout)
+
+        # Adding top widget to main layout
+        main_layout.addLayout(data_buttons_layout)
+
+        # Adding result matrix to main layout
+        main_layout.addWidget(matrix_result_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        main_layout.addWidget(self.matrix_result_text)
+
+        # Adding back button to main layout
+        main_layout.addWidget(back_button)
 
         # Setting main layout of window
         self.setLayout(main_layout)
@@ -89,14 +129,27 @@ class MatrixWindow(QWidget):
         self.matrix2 = matrix_data.getInputs()
 
         # Updating matrix1 show widget
-        self.matrix2_text.setPlainText(str(self.matrix1))
+        self.matrix2_text.setPlainText(str(self.matrix2))
+    
+    # Function for going back to main menu
+    def back_to_menu(self):
+        self.close()
+        self.parent.show()
+
+    # Method for centering windows
+    def center(self):
+        qr = self.frameGeometry()
+        cp = self.screen().availableGeometry().center()
+
+        qr.moveCenter(cp)
+        self.move(qr.topLeft())
 
 
-# def main():
-#     app = QApplication(sys.argv)
-#     window = MatrixWindow(None)
-#     window.show()
-#     sys.exit(app.exec())
+def main():
+    app = QApplication(sys.argv)
+    window = MatrixWindow(None)
+    window.show()
+    sys.exit(app.exec())
 
-# if __name__ == "__main__":
-#     main()
+if __name__ == "__main__":
+    main()
