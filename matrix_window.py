@@ -29,7 +29,7 @@ class MatrixWindow(QWidget):
         # Setting name of window
         self.setWindowTitle("Matrix Calculator")
         # Rezisizing window
-        self.resize(600, 800)
+        self.resize(500, 600)
         # Centering window
         self.center()
 
@@ -99,9 +99,37 @@ class MatrixWindow(QWidget):
         # Adding top widget to main layout
         main_layout.addLayout(data_buttons_layout)
 
-        # Adding result matrix to main layout
-        main_layout.addWidget(matrix_result_label, alignment=Qt.AlignmentFlag.AlignCenter)
-        main_layout.addWidget(self.matrix_result_text)
+        # Creating buttons for operators
+        add_button = QPushButton('Add')
+        subtract_button = QPushButton('Subtract')
+        multiply_button = QPushButton('Multipy')
+        transpose_button = QPushButton('Transpose')
+        invert_button = QPushButton('Invert')
+
+        # Creating layout for operators
+        operators_layout_c1 = QVBoxLayout()
+
+        # Adding operator buttons to layout
+        operators_layout_c1.addWidget(add_button)
+        operators_layout_c1.addWidget(subtract_button)
+        operators_layout_c1.addWidget(multiply_button)
+        operators_layout_c1.addWidget(transpose_button)
+        operators_layout_c1.addWidget(invert_button)
+
+        # Creating layout for result matrix
+        result_layout = QVBoxLayout()
+
+        # Adding result matrix to layout
+        result_layout.addWidget(matrix_result_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        result_layout.addWidget(self.matrix_result_text)
+
+        # Creating layout for result matrix and operators
+        res_operators_layout = QHBoxLayout()
+        res_operators_layout.addLayout(result_layout)
+        res_operators_layout.addLayout(operators_layout_c1)
+
+        # Adding result and operators to main layout
+        main_layout.addLayout(res_operators_layout)
 
         # Adding back button to main layout
         main_layout.addWidget(back_button)
@@ -145,11 +173,11 @@ class MatrixWindow(QWidget):
         self.move(qr.topLeft())
 
 
-def main():
-    app = QApplication(sys.argv)
-    window = MatrixWindow(None)
-    window.show()
-    sys.exit(app.exec())
+# def main():
+#     app = QApplication(sys.argv)
+#     window = MatrixWindow(None)
+#     window.show()
+#     sys.exit(app.exec())
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
