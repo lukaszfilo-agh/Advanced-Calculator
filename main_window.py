@@ -17,6 +17,7 @@ from PyQt6.QtWidgets import (
 
 from plot_window import PlotWindow
 from matrix_window import MatrixWindow
+from integrals_window import IntegralsWindow
 
 # Window size:
 WINDOW_WIDTH = 575
@@ -246,6 +247,11 @@ class CalcMainWindow(QMainWindow):
             matrix_window_button.setStatusTip("Open matrix calculator")
             matrix_window_button.triggered.connect(self.__draw_matrix_window)
 
+            # Integrals calc button:
+            integrals_window_button = QAction("&Integrals calculator", self)
+            integrals_window_button.setStatusTip("Open integrals calculator")
+            integrals_window_button.triggered.connect(self.__draw_integrals_window)
+
             # Exit Button:
             exit_button = QAction("&Quit", self)
             exit_button.setStatusTip("Quit app")
@@ -255,6 +261,7 @@ class CalcMainWindow(QMainWindow):
             toolbar.addAction(sample_button)
             toolbar.addAction(plot_calc_button)
             toolbar.addAction(matrix_window_button)
+            toolbar.addAction(integrals_window_button)
             toolbar.addAction(exit_button)
 
         create_sample_buttons()
@@ -1136,6 +1143,7 @@ class CalcMainWindow(QMainWindow):
                 self.__display_field.setText(self.__str_val_operations)
                 self.__operations_field.setText(self.__str_val_operations)
 
+    # Functions to manage toolbar buttons - opening proper windows:
     def __draw_plot_window(self):
         self.plot_window = PlotWindow(self)
         self.plot_window.show()
@@ -1147,6 +1155,12 @@ class CalcMainWindow(QMainWindow):
         self.matrix_window.show()
         self.hide()
         print('Matrix opened')
+
+    def __draw_integrals_window(self):
+        self.integrals_window = IntegralsWindow(self)
+        self.integrals_window.show()
+        self.hide()
+        print('Integrals opened')
 
     def __sample_button_click(self, s):
         print('button clicked')
