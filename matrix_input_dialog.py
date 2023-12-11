@@ -152,7 +152,8 @@ class MatrixInputLineEdit(QLineEdit):
         allowed_keys = [Qt.Key.Key_Backspace,
                         Qt.Key.Key_Left,
                         Qt.Key.Key_Right,
-                        Qt.Key.Key_I
+                        Qt.Key.Key_I,
+                        46  # '.'
                         ]
         print(event.key())
         if event.text().isdigit() or event.key() in allowed_keys:

@@ -15,6 +15,7 @@ matplotlib.use('QtAgg')
 
 import re
 
+import numpy as np
 
 class PlotInputDialog(QDialog):
     # Class for input dialog
@@ -65,7 +66,7 @@ class PlotInputDialog(QDialog):
                 ['*', '/', 'sin()', 'cos()'],
                 ['+', '-', 'tg()', 'ctg()'],
                 ['.', '^', 'arcsin()', 'arccos()'],
-                ['(', ')', 'arctg()', ' '],
+                ['(', ')', 'arctg()', 'log()'],
                 ['π', 'e', '| |', 'sqrt()'],
                 ['x', ' ', '<-', 'C']
             ],
@@ -203,6 +204,16 @@ class PlotInputDialog(QDialog):
         # Catching errors for LimErrors
         except LimError:
             return None, None, None, None
+
+        except SyntaxError:
+            message_box = QMessageBox()
+            message_box.setWindowTitle("ERROR")
+            message_box.setText(f"Syntax error.")
+            print("Syntax error")
+            result = message_box.exec()
+            if result == QMessageBox.StandardButton.Ok:
+                print("Error closed")
+            return None, None, None, None
         
         return function_math, function_str, lim1, lim2
 
@@ -274,7 +285,7 @@ class LimError(Exception):
 
 def func_bad_chars(expression):
     result = re.findall(
-        r'(?!(?:sin|arcsin|cos|arccos|tg|arctg|ctg|arctg|sqrt|e\^|\d+|[\(\)\+\-\*\/\^]|\dx|x))\b\S+\b', expression)
+        r'(?!(?:sin|arcsin|cos|arccos|tg|arctg|ctg|arctg|sqrt|log|e\^|\d+|[\(\)\+\-\*\/\^]|\dx|x|π))\b\S+\b', expression)
     return result
 
 def lim_bad_chars(expression):
@@ -306,6 +317,9 @@ def convert_func_math(expression):
 
     # Change 'sqrt()' to np.sqrt()
     expression = re.sub(r'sqrt\b', 'np.sqrt', expression)
+
+    # Change 'log()' to 'np.log()'
+    expression = re.sub(r'log\b', 'np.log', expression)
 
     # Change 'sin' to 'np.sin'
     expression = re.sub(r'sin\b', 'np.sin', expression)
@@ -343,5 +357,8 @@ def convert_func_math(expression):
 
     # Change '\d np.' to '\d*np.'
     expression = re.sub(r'(\d)(np)', r'\1*\2', expression)
+
+    # Change 'π' to 'np.pi'
+    expression = re.sub(r'\bπ\b', 'np.pi', expression)
 
     return expression
