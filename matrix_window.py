@@ -26,6 +26,8 @@ class MatrixWindow(QWidget):
         self.matrix1 = None
         self.matrix2 = None
 
+        self.matrix_result = None
+
         # Setting name of window
         self.setWindowTitle("Matrix Calculator")
         # Rezisizing window
@@ -96,11 +98,13 @@ class MatrixWindow(QWidget):
         # Adding matrix show to main layout
         main_layout.addLayout(matrix_layout)
 
-        # Adding top widget to main layout
+        # Adding data buttons insert to main layout
         main_layout.addLayout(data_buttons_layout)
 
         # Creating buttons for operators
         add_button = QPushButton('Add')
+        add_button.clicked.connect(self.add_matrices)
+
         subtract_button = QPushButton('Subtract')
         multiply_button = QPushButton('Multipy')
         transpose_button = QPushButton('Transpose')
@@ -158,6 +162,13 @@ class MatrixWindow(QWidget):
 
         # Updating matrix1 show widget
         self.matrix2_text.setPlainText(str(self.matrix2))
+
+    def add_matrices(self):
+        self.matrix_result = self.matrix1 + self.matrix2
+        self.result_show()
+
+    def result_show(self):
+        self.matrix_result_text.setPlainText(str(self.matrix_result))
     
     # Function for going back to main menu
     def back_to_menu(self):
@@ -173,11 +184,11 @@ class MatrixWindow(QWidget):
         self.move(qr.topLeft())
 
 
-# def main():
-#     app = QApplication(sys.argv)
-#     window = MatrixWindow(None)
-#     window.show()
-#     sys.exit(app.exec())
+def main():
+    app = QApplication(sys.argv)
+    window = MatrixWindow(None)
+    window.show()
+    sys.exit(app.exec())
 
-# if __name__ == "__main__":
-#     main()
+if __name__ == "__main__":
+    main()
