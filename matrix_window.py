@@ -254,12 +254,3 @@ class MatrixWindow(QWidget):
         qr.moveCenter(cp)
         self.move(qr.topLeft())
 
-
-def main():
-    app = QApplication(sys.argv)
-    window = MatrixWindow(None)
-    window.show()
-    sys.exit(app.exec())
-
-if __name__ == "__main__":
-    main()
