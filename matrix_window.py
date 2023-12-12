@@ -300,11 +300,11 @@ class MatrixWindow(QWidget):
         self.move(qr.topLeft())
 
 
-def main():
-    app = QApplication(sys.argv)
-    window = MatrixWindow(None)
-    window.show()
-    sys.exit(app.exec())
+# def main():
+#     app = QApplication(sys.argv)
+#     window = MatrixWindow(None)
+#     window.show()
+#     sys.exit(app.exec())
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
