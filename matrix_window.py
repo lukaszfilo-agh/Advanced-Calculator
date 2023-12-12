@@ -13,6 +13,8 @@ from PyQt6.QtCore import Qt
 
 import numpy as np
 
+from scipy import linalg
+
 from matrix_input_dialog import MatrixInputDialog
 
 
@@ -101,24 +103,55 @@ class MatrixWindow(QWidget):
         # Adding data buttons insert to main layout
         main_layout.addLayout(data_buttons_layout)
 
-        # Creating buttons for operators
+        # Creating layout for operators
+        operators_layout_c1 = QVBoxLayout()
+        operators_layout_c2 = QVBoxLayout()
+
+        # Creating buttons for operators Column 1
         add_button = QPushButton('Add')
         add_button.clicked.connect(self.add_matrices)
 
         subtract_button = QPushButton('Subtract')
+        subtract_button.clicked.connect(self.subtract_matrices)
+
         multiply_button = QPushButton('Multipy')
+        multiply_button.clicked.connect(self.multipy_matrices)
+
         transpose_button = QPushButton('Transpose')
+        transpose_button.clicked.connect(self.matrix1_transpose)
+
         invert_button = QPushButton('Invert')
+        invert_button.clicked.connect(self.matrix1_invert)
 
-        # Creating layout for operators
-        operators_layout_c1 = QVBoxLayout()
-
-        # Adding operator buttons to layout
+        # Adding operator buttons column 1 to layout
         operators_layout_c1.addWidget(add_button)
         operators_layout_c1.addWidget(subtract_button)
         operators_layout_c1.addWidget(multiply_button)
         operators_layout_c1.addWidget(transpose_button)
         operators_layout_c1.addWidget(invert_button)
+
+        # Creating buttons for operators Column 2
+        eigval_button = QPushButton('Eigenvalues')
+        eigval_button.clicked.connect(self.matrix1_eigvals)
+
+        eigvect_button = QPushButton('Eigenvectors')
+        eigvect_button.clicked.connect(self.matrix1_eigvect)
+
+        jordan_decomp = QPushButton('Jordan')
+        jordan_decomp.clicked.connect(self.matrix1_jordan)
+
+        ph_1 = QPushButton('PH1')
+        ph_1.clicked.connect(self.ph1_func)
+
+        ph_2 = QPushButton('PH2')
+        ph_2.clicked.connect(self.ph2_func)
+
+        # Adding operator buttons column 2 to layout
+        operators_layout_c2.addWidget(eigval_button)
+        operators_layout_c2.addWidget(eigvect_button)
+        operators_layout_c2.addWidget(jordan_decomp)
+        operators_layout_c2.addWidget(ph_1)
+        operators_layout_c2.addWidget(ph_2)
 
         # Creating layout for result matrix
         result_layout = QVBoxLayout()
@@ -131,6 +164,7 @@ class MatrixWindow(QWidget):
         res_operators_layout = QHBoxLayout()
         res_operators_layout.addLayout(result_layout)
         res_operators_layout.addLayout(operators_layout_c1)
+        res_operators_layout.addLayout(operators_layout_c2)
 
         # Adding result and operators to main layout
         main_layout.addLayout(res_operators_layout)
@@ -166,6 +200,43 @@ class MatrixWindow(QWidget):
     def add_matrices(self):
         self.matrix_result = self.matrix1 + self.matrix2
         self.result_show()
+
+    def subtract_matrices(self):
+        self.matrix_result = self.matrix1 - self.matrix2
+        self.result_show()
+
+    def multipy_matrices(self):
+        self.matrix_result = self.matrix1 @ self.matrix2
+        self.result_show()
+
+    def matrix1_transpose(self):
+        self.matrix_result = np.transpose(self.matrix1)
+        self.matrix2_text.setPlainText('Matrix 1 transposed')
+        self.result_show()
+
+    def matrix1_invert(self):
+        self.matrix_result = linalg.inv(self.matrix1)
+        self.matrix2_text.setPlainText('Matrix 1 inverted')
+        self.result_show()
+
+    def matrix1_eigvals(self):
+        self.matrix_result, _ = linalg.eig(self.matrix1)
+        self.matrix2_text.setPlainText('Matrix 1 Eigvals')
+        self.result_show()
+
+    def matrix1_eigvect(self):
+        _, self.matrix_result = linalg.eig(self.matrix1)
+        self.matrix2_text.setPlainText('Matrix 1 Eigvects')
+        self.result_show()
+
+    def matrix1_jordan(self):
+        pass
+
+    def ph1_func(self):
+        pass
+
+    def ph2_func(self):
+        pass
 
     def result_show(self):
         self.matrix_result_text.setPlainText(str(self.matrix_result))
