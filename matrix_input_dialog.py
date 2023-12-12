@@ -30,7 +30,6 @@ class MatrixInputDialog(QDialog):
         # Create label and input for rows
         rows_label = QLabel('Enter number of rows:')
         self.rows_input = RowColLineEdit()
-        self.rows_input.setFixedSize(200, 50)
 
         # Create layout for rows input
         rows_input_layout = QHBoxLayout()
@@ -40,7 +39,6 @@ class MatrixInputDialog(QDialog):
         # Create label and input for columns
         cols_label = QLabel('Enter number of columns:')
         self.cols_input = RowColLineEdit()
-        print(cols_label.size())
 
         # Create button for saving size of matrix
         next_button = QPushButton('Proceed')

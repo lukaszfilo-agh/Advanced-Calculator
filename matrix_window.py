@@ -70,21 +70,23 @@ class MatrixWindow(QWidget):
 
         # Creating layout for matrix show
         matrices_layout = QHBoxLayout()
-        
+
         # Creating layout for matrix A
         matrix_A_layout = QVBoxLayout()
 
         # Adding label and matrix to layout
-        matrix_A_layout.addWidget(matrix_A_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        matrix_A_layout.addWidget(
+            matrix_A_label, alignment=Qt.AlignmentFlag.AlignCenter)
         matrix_A_layout.addWidget(self.matrix_A_text)
 
         # Creating layout for matrix B
         matrix_B_layout = QVBoxLayout()
 
         # Adding label and matrix to layout
-        matrix_B_layout.addWidget(matrix_B_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        matrix_B_layout.addWidget(
+            matrix_B_label, alignment=Qt.AlignmentFlag.AlignCenter)
         matrix_B_layout.addWidget(self.matrix_B_text)
-        
+
         # Creating layout for operators between Two Matrices
         operators_AB = QVBoxLayout()
 
@@ -146,7 +148,7 @@ class MatrixWindow(QWidget):
         operators_layout_MA.addWidget(eigval_button_MA)
         operators_layout_MA.addWidget(eigvect_button_MA)
         operators_layout_MA.addWidget(jordan_decomp_MA)
-        
+
         # Creating layout for operators for matrix B
         operators_layout_MB = QVBoxLayout()
 
@@ -181,7 +183,8 @@ class MatrixWindow(QWidget):
         result_layout = QVBoxLayout()
 
         # Adding result matrix to layout
-        result_layout.addWidget(matrix_result_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        result_layout.addWidget(matrix_result_label,
+                                alignment=Qt.AlignmentFlag.AlignCenter)
         result_layout.addWidget(self.matrix_result_text)
 
         # Creating layout for result matrix and operators
@@ -258,7 +261,12 @@ class MatrixWindow(QWidget):
         self.result_show('Eigenvectors A')
 
     def matrix_A_jordan(self):
-        pass
+        eigvals, eigvects = linalg.eig(self.matrix_A)
+        jordan = np.diag(eigvals)
+        p = eigvects
+        pinv = linalg.inv(eigvects)
+        self.matrix_result_text.setPlainText('Matrix A Jordan\n' + 'P' + '\n' + str(
+            p) + '\n' + 'J' + '\n' + str(jordan) + '\n' + 'P_inv' + '\n' + str(pinv))
 
     def matrix_B_det(self):
         self.matrix_R = linalg.det(self.matrix_B)
@@ -281,11 +289,16 @@ class MatrixWindow(QWidget):
         self.result_show('Eigenvectors B')
 
     def matrix_B_jordan(self):
-        pass
+        eigvals, eigvects = linalg.eig(self.matrix_B)
+        jordan = np.diag(eigvals)
+        p = eigvects
+        pinv = linalg.inv(eigvects)
+        self.matrix_result_text.setPlainText('Matrix B Jordan\n' + 'P' + '\n' + str(
+            p) + '\n' + 'J' + '\n' + str(jordan) + '\n' + 'P_inv' + '\n' + str(pinv))
 
     def result_show(self, msg):
         self.matrix_result_text.setPlainText(msg + '\n' + str(self.matrix_R))
-    
+
     # Function for going back to main menu
     def back_to_menu(self):
         self.close()
@@ -300,11 +313,12 @@ class MatrixWindow(QWidget):
         self.move(qr.topLeft())
 
 
-# def main():
-#     app = QApplication(sys.argv)
-#     window = MatrixWindow(None)
-#     window.show()
-#     sys.exit(app.exec())
+def main():
+    app = QApplication(sys.argv)
+    window = MatrixWindow(None)
+    window.show()
+    sys.exit(app.exec())
 
-# if __name__ == "__main__":
-#     main()
+
+if __name__ == "__main__":
+    main()
