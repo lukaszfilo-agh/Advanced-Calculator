@@ -312,35 +312,38 @@ def convert_func_math(expression):
     # Change 'e^x' to 'np.exp(x)'
     expression = re.sub(r'e\^(.*)', r'np.exp(\1)', expression)
 
-    # Change 'e^x' to 'np.exp(x)'
+    # Change '||' to 'np.abs(x)'
     expression = re.sub(r'\|(.*)\|', r'np.abs(\1)', expression)
 
+    # Change 2l to 2*l
+    expression = re.sub(r'(\d)(\w)', r'\1*\2', expression)
+
     # Change 'sqrt()' to np.sqrt()
-    expression = re.sub(r'sqrt\b', 'np.sqrt', expression)
+    expression = re.sub(r'\bsqrt\b', 'np.sqrt', expression)
 
     # Change 'log()' to 'np.log()'
-    expression = re.sub(r'log\b', 'np.log', expression)
+    expression = re.sub(r'\blog\b', 'np.log', expression)
 
     # Change 'sin' to 'np.sin'
-    expression = re.sub(r'sin\b', 'np.sin', expression)
+    expression = re.sub(r'\bsin\b', 'np.sin', expression)
 
     # Change 'arcsin' to 'np.arcsin'
-    expression = re.sub(r'arcsin\b', 'np.arcsin', expression)
+    expression = re.sub(r'\barcsin\b', 'np.arcsin', expression)
 
     # Change 'cos' to 'np.cos'
-    expression = re.sub(r'cos\b', 'np.cos', expression)
+    expression = re.sub(r'\bcos\b', 'np.cos', expression)
 
     # Change 'arccos' to 'np.arccos'
-    expression = re.sub(r'arccos\b', 'np.arccos', expression)
+    expression = re.sub(r'\barccos\b', 'np.arccos', expression)
 
     # Change 'tg' to 'np.tan'
-    expression = re.sub(r'tg\b', 'np.tan', expression)
+    expression = re.sub(r'\btg\b', 'np.tan', expression)
 
     # Change 'arctg' to 'np.arctan'
-    expression = re.sub(r'arctg\b', 'np.arctan', expression)
+    expression = re.sub(r'\barctg\b', 'np.arctan', expression)
 
     # Change 'ctg' to '1/np.tan'
-    expression = re.sub(r'ctg\b', '1/np.tan', expression)
+    expression = re.sub(r'\bctg\b', '1/np.tan', expression)
 
     # Change 'x' to '*x'
     expression = re.sub(r'(\d)(x)', r'\1*\2', expression)
