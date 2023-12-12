@@ -1,5 +1,6 @@
-from typing import Union
-import scipy as sp
+from typing import Union, List
+from scipy.integrate import quad
+import sympy as sp
 
 from PyQt6.QtWidgets import (
     QPushButton,
@@ -36,14 +37,14 @@ class IntegralsWindow(QDialog):
         # Creating main layout
         main_layout = QVBoxLayout()
 
-        # Input fields list
+        # Input fields list:
         self.input_fields = [
             CustomLineEdit(),  # Function input
             CustomLineEdit(),  # Lower limit input
             CustomLineEdit()  # Upper limit input
         ]
 
-        # Input fields labels
+        # Input fields labels:
         labels_text = ['f(x):', 'Lower limit:', 'Upper limit:']
 
         self.input_fields[0].installEventFilter(self)
@@ -59,13 +60,13 @@ class IntegralsWindow(QDialog):
             main_layout.addWidget(label)
             main_layout.addWidget(self.input_fields[i])
 
-        # Layout for keyboard buttons
+        # Layout for keyboard buttons:
         self.buttons_layout = QVBoxLayout()
         main_layout.addLayout(self.buttons_layout)
 
-        # Creating keyboards
+        # Creating keyboards:
         self.keyboards = [
-            [  # Keyboard for function
+            [  # Keyboard for function:
                 ['*', '/', 'sin()', 'cos()'],
                 ['+', '-', 'tg()', 'ctg()'],
                 ['.', '^', 'arcsin()', 'arccos()'],
@@ -73,7 +74,7 @@ class IntegralsWindow(QDialog):
                 ['π', 'e', '| |', 'sqrt()'],
                 ['x', ' ', '<-', 'C']
             ],
-            [  # Keyboard for lower limit
+            [  # Keyboard for lower limit:
                 [' ', ' ', ' ', ' '],
                 [' ', ' ', ' ', ' '],
                 [' ', ' ', ' ', ' '],
@@ -81,7 +82,7 @@ class IntegralsWindow(QDialog):
                 ['π', 'e', '.', '∞'],
                 ['+', '-', '<-', 'C']
             ],
-            [  # Keyboard for upper limit
+            [  # Keyboard for upper limit:
                 [' ', ' ', ' ', ' '],
                 [' ', ' ', ' ', ' '],
                 [' ', ' ', ' ', ' '],
@@ -91,9 +92,9 @@ class IntegralsWindow(QDialog):
             ]
         ]
 
-        # Button for drawing plot
+        # Button for calculating:
         button_calculate = QPushButton('Calculate')
-        button_calculate.clicked.connect(self.accept)
+        button_calculate.clicked.connect(self.__calc)
         button_calculate.setShortcut(Qt.Key.Key_Return)
 
         main_layout.addWidget(button_calculate)
@@ -104,7 +105,7 @@ class IntegralsWindow(QDialog):
 
         main_layout.addWidget(back_button, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        # Setting main_layout as dialog layout
+        # Setting main_layout as dialog layout:
         self.setLayout(main_layout)
 
         self.active_field = 0
@@ -176,70 +177,100 @@ class IntegralsWindow(QDialog):
         self.parent.show()
 
     # Getting inputs:
-    def __get_inputs(self) -> tuple[None, None, None, None]:
+    def __calc(self):
         function_str, lim1, lim2 = tuple(input.text() for input in self.input_fields)
 
-        try:
-            if len(function_str) == 0:
-                raise EmptyInputError
+        if len(function_str) == 0:
+            raise EmptyInputError
 
-            # Creating expression for eval:
-            function_math = convert_func_math(function_str)
+        # Creating expression for eval:
+        function_math = convert_func_math(function_str)
 
-            # If only 1 lim is empty we fill it with inf:
-            if lim1 == "" and lim2 != "":
-                lim1 = "inf"
-            elif lim2 == "" and lim1 != "":
-                lim2 = "inf"
+        # If only 1 lim is empty we fill it with inf:
+        if lim1 == "" and lim2 != "":
+            lim1 = "inf"
+        elif lim2 == "" and lim1 != "":
+            lim2 = "inf"
 
-            # If both lim are empty then we move to indefinite integrals:
-            if lim1 == "" and lim2 == "":
-                self.__calc_indefinite_integrals(function_math)
-            # Else - definite integrals:
+        # If both lim are empty then we move to indefinite integrals:
+        if lim1 == "" and lim2 == "":
+            self.__calc_indefinite_integrals(function_math)
+
+        # Else - definite integrals:
+        else:
+            # Checking for illegal characters in function str:
+            invalid_chars = func_bad_chars(function_str)
+            if len(invalid_chars) != 0:
+                raise InvalidCharacters(function_str)
+
+            # Checking for illegal characters in lim str:
+            lim1_invalid_chars = lim_bad_chars(lim1)
+            lim2_invalid_chars = lim_bad_chars(lim2)
+
+            if len(lim1_invalid_chars) != 0 or len(lim2_invalid_chars) != 0:
+                raise LimError(lim1, lim2, 0)
+
+            lim1 = convert_lim_math(lim1)
+            lim2 = convert_lim_math(lim2)
+
+            # Evaluating lim1 and lim2:
+            if lim1 in ["inf", "-inf"]:
+                lim1 = float(lim1)
             else:
-                # Checking for illegal characters in function str:
-                invalid_chars = func_bad_chars(function_str)
-                if len(invalid_chars) != 0:
-                    raise InvalidCharacters(function_str)
+                lim1 = eval(lim1)
 
-                # Checking for illegal characters in lim str:
-                lim1_invalid_chars = lim_bad_chars(lim1)
-                lim2_invalid_chars = lim_bad_chars(lim2)
+            if lim2 in ["inf", "-inf"]:
+                lim2 = float(lim2)
+            else:
+                lim2 = eval(lim2)
 
-                if len(lim1_invalid_chars) != 0 or len(lim2_invalid_chars) != 0:
-                    raise LimError(lim1, lim2, 0)
-
-                lim1 = convert_lim_math(lim1)
-                lim2 = convert_lim_math(lim2)
-
-                # Evaluating lim1 and lim2:
-                if lim1 in ["inf", "-inf"]:
-                    lim1 = float(lim1)
-                else:
-                    lim1 = eval(lim1)
-
-                if lim2 in ["inf", "-inf"]:
-                    lim2 = float(lim2)
-                else:
-                    lim2 = eval(lim2)
-
-                self.__calc_definite_integrals(function_math, lim1, lim2)
-
-        # Catching errors for empty data
-        except EmptyInputError:
-            return None, None, None, None
-
-        # Catching errors for invalid chars
-        except InvalidCharacters:
-            return None, None, None, None
-
-        # Catching errors for LimErrors
-        except LimError:
-            return None, None, None, None
+            self.__calc_definite_integrals(function_math, lim1, lim2)
 
     # Calculating indefinite integrals:
     def __calc_indefinite_integrals(self, func: str) -> None:
-        pass
+        try:
+            # Symbolic variable:
+            x = sp.symbols('x', real=True)
+
+            # Evaluating function:
+            func_math = eval(func)
+
+            # Getting result for display:
+            res = str(sp.simplify(sp.integrate(func_math, x)))
+
+            # No result in elementary function:
+            if res[0] == "⌠":
+                message_box = QMessageBox()
+                message_box.setWindowTitle("NOT ABLE TO SOLVE")
+                message_box.setText("There may be no solution in the elementary functions.")
+                message_box.exec()
+            else:
+                message_box = QMessageBox()
+                message_box.setWindowTitle("SOLUTION")
+                message_box.setText(f"Primary function to your integral:\n\n{res}")
+                message_box.exec()
+        # Catch zero division error:
+        except ZeroDivisionError:
+            message_box = QMessageBox()
+            message_box.setWindowTitle("ERROR")
+            message_box.setText(f"Division by zero!!!")
+            message_box.exec()
+            # Clearing the input:
+            for line_edit in self.input_fields:
+                line_edit.setText("")
+        # Catching all other exceptions
+        except Exception as e:
+            print('different exception')
+            message_box = QMessageBox()
+            message_box.setWindowTitle("ERROR")
+            message_box.setText(
+                f"ERROR \n f(x) = {re.sub('sp.','', func)} \n")
+            message_box.exec()
+            print(print(e))
+
+            # Clearing the input:
+            for line_edit in self.input_fields:
+                line_edit.setText("")
 
     # Calcualting definite integrals:
     def __calc_definite_integrals(self, func: str, lim1: Union[float, int], lim2: Union[float, int]) -> None:
@@ -248,10 +279,10 @@ class IntegralsWindow(QDialog):
 
 # Class for custom line edit with keyboard filtering
 class CustomLineEdit(QLineEdit):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event) -> None:
         allowed_keys = [Qt.Key.Key_Backspace,
                         Qt.Key.Key_Left,
                         Qt.Key.Key_Right,
@@ -276,10 +307,7 @@ class EmptyInputError(Exception):
         message_box = QMessageBox()
         message_box.setWindowTitle("ERROR")
         message_box.setText(f"Input cannot be empty.")
-        print("Input empty")
-        result = message_box.exec()
-        if result == QMessageBox.StandardButton.Ok:
-            print("Error closed")
+        message_box.exec()
 
 
 class InvalidCharacters(Exception):
@@ -290,10 +318,7 @@ class InvalidCharacters(Exception):
         message_box = QMessageBox()
         message_box.setWindowTitle("ERROR")
         message_box.setText(f"You have entered invalid input: {str}.")
-        print("Invalid chars")
-        result = message_box.exec()
-        if result == QMessageBox.StandardButton.Ok:
-            print("Error closed")
+        message_box.exec()
 
 
 class LimError(Exception):
@@ -307,19 +332,16 @@ class LimError(Exception):
             message_box.setText(f"Limit error. {lim1}, {lim2}")
         elif flag == 1:
             message_box.setText(f"Lower limit is greater than upper limit.")
-        print("Error limits")
-        result = message_box.exec()
-        if result == QMessageBox.StandardButton.Ok:
-            print("Error closed")
+        message_box.exec()
 
 
-def func_bad_chars(expression: str) -> str:
+def func_bad_chars(expression: str) -> List[str]:
     result = re.findall(
         r'(?!(?:sin|arcsin|cos|arccos|tg|arctg|ctg|arctg|sqrt|e\^|\d+|[\(\)\+\-\*\/\^]|\dx|x))\b\S+\b', expression)
     return result
 
 
-def lim_bad_chars(expression: str) -> str:
+def lim_bad_chars(expression: str) -> List[str]:
     result = re.findall(r'[^0-9eπ∞\-]', expression)
     return result
 
@@ -331,11 +353,11 @@ def convert_lim_math(expression: str) -> str:
     # Change 'e' to '*e'
     expression = re.sub(r'(\d)(e)', r'\1*\2', expression)
 
-    # Change 'π' to 'np.pi'
-    expression = re.sub(r'\bπ\b', 'np.pi', expression)
+    # Change 'π' to 'sp.pi'
+    expression = re.sub(r'\bπ\b', 'sp.pi', expression)
 
-    # Change 'e' to 'np.e'
-    expression = re.sub(r'\be\b', 'np.e', expression)
+    # Change 'e' to 'sp.e'
+    expression = re.sub(r'\be\b', 'sp.e', expression)
 
     # Change '∞' to 'inf'
     expression = re.sub(r'\b∞\b', 'inf', expression)
@@ -347,35 +369,41 @@ def convert_lim_math(expression: str) -> str:
 
 
 def convert_func_math(expression: str) -> str:
-    # Change 'e^x' to 'np.exp(x)'
-    expression = re.sub(r'e\^(.*)', r'np.exp(\1)', expression)
+    # Change 21 to 2*1:
+    expression = re.sub(r'(\d)(\w)', r'\1*\2', expression)
 
-    # Change 'e^x' to 'np.exp(x)'
-    expression = re.sub(r'\|(.*)\|', r'np.abs(\1)', expression)
+    # Change 'e^x' to 'sp.exp(x)'
+    expression = re.sub(r'e\^(.*)', r'sp.exp(\1)', expression)
 
-    # Change 'sqrt()' to np.sqrt()
-    expression = re.sub(r'sqrt\b', 'np.sqrt', expression)
+    # Change '||' to 'sp.abs(x):
+    expression = re.sub(r'\|(.*)\|', r'sp.Abs(\1)', expression)
 
-    # Change 'sin' to 'np.sin'
-    expression = re.sub(r'sin\b', 'np.sin', expression)
+    # Change 'sqrt()' to sp.sqrt():
+    expression = re.sub(r'\bsqrt\b', 'sp.sqrt', expression)
 
-    # Change 'arcsin' to 'np.arcsin'
-    expression = re.sub(r'arcsin\b', 'np.arcsin', expression)
+    # Change 'log()' to 'sp.log()':
+    expression = re.sub(r'\blog\b', 'sp.log', expression)
 
-    # Change 'cos' to 'np.cos'
-    expression = re.sub(r'cos\b', 'np.cos', expression)
+    # Change 'sin' to 'sp.sin'
+    expression = re.sub(r'\bsin\b', 'sp.sin', expression)
 
-    # Change 'arccos' to 'np.arccos'
-    expression = re.sub(r'arccos\b', 'np.arccos', expression)
+    # Change 'arcsin' to 'sp.arcsin'
+    expression = re.sub(r'\barcsin\b', 'sp.asin', expression)
 
-    # Change 'tg' to 'np.tan'
-    expression = re.sub(r'tg\b', 'np.tan', expression)
+    # Change 'cos' to 'sp.cos'
+    expression = re.sub(r'\bcos\b', 'sp.cos', expression)
 
-    # Change 'arctg' to 'np.arctan'
-    expression = re.sub(r'arctg\b', 'np.arctan', expression)
+    # Change 'arccos' to 'sp.arccos'
+    expression = re.sub(r'\barccos\b', 'sp.acos', expression)
 
-    # Change 'ctg' to '1/np.tan'
-    expression = re.sub(r'ctg\b', '1/np.tan', expression)
+    # Change 'tg' to 'sp.tan'
+    expression = re.sub(r'\btg\b', 'sp.tan', expression)
+
+    # Change 'arctg' to 'sp.arctan'
+    expression = re.sub(r'\barctg\b', 'sp.atan', expression)
+
+    # Change 'ctg' to '1/sp.tan'
+    expression = re.sub(r'\bctg\b', '1/sp.tan', expression)
 
     # Change 'x' to '*x'
     expression = re.sub(r'(\d)(x)', r'\1*\2', expression)
@@ -390,7 +418,7 @@ def convert_func_math(expression: str) -> str:
     expression = re.sub(r'([1-9x])(\()', r'\1*\2', expression)
     expression = re.sub(r'(\))([1-9x])', r'\1*\2', expression)
 
-    # Change '\d np.' to '\d*np.'
-    expression = re.sub(r'(\d)(np)', r'\1*\2', expression)
+    # Change '\d sp.' to '\d*sp.'
+    expression = re.sub(r'(\d)(sp)', r'\1*\2', expression)
 
     return expression
