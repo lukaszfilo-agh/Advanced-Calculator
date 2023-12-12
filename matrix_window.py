@@ -25,133 +25,157 @@ class MatrixWindow(QWidget):
         self.parent = menu_window
 
         # Creating variables for matrices
-        self.matrix1 = None
-        self.matrix2 = None
-
-        self.matrix_result = None
+        self.matrix_A = None
+        self.matrix_B = None
+        self.matrix_R = None
 
         # Setting name of window
         self.setWindowTitle("Matrix Calculator")
         # Rezisizing window
-        self.resize(500, 600)
+        self.setFixedSize(500, 700)
         # Centering window
         self.center()
-
-        # Button for inserting data matrix 1
-        matrix1_button = QPushButton("Insert Matrix 1")
-        matrix1_button.clicked.connect(self.matrix1_input)
-
-        # Button for inserting data matrix 2
-        matrix2_button = QPushButton("Insert Matrix 2")
-        matrix2_button.clicked.connect(self.matrix2_input)
 
         # Creating top layout for buttons
         data_buttons_layout = QHBoxLayout()
 
+        # Button for inserting data matrix A
+        matrix_A_button = QPushButton("Insert Matrix A")
+        matrix_A_button.clicked.connect(self.matrix_A_input)
+
+        # Button for inserting data matrix B
+        matrix_B_button = QPushButton("Insert Matrix B")
+        matrix_B_button.clicked.connect(self.matrix_B_input)
+
         # Adding buttons to top widget
-        data_buttons_layout.addWidget(matrix1_button)
-        data_buttons_layout.addWidget(matrix2_button)
+        data_buttons_layout.addWidget(matrix_A_button)
+        data_buttons_layout.addWidget(matrix_B_button)
 
         # Creating labels for matrices
-        matrix1_label = QLabel('Matrix 1')
-        matrix2_label = QLabel('Matrix 2')
+        matrix_A_label = QLabel('Matrix A')
+        matrix_B_label = QLabel('Matrix B')
         matrix_result_label = QLabel('Result')
 
-        # Adding matrix1 display
-        self.matrix1_text = QTextEdit()
-        self.matrix1_text.setReadOnly(True)
+        # Adding matrix_A display
+        self.matrix_A_text = QTextEdit()
+        self.matrix_A_text.setReadOnly(True)
 
-        # Adding matrix1 display
-        self.matrix2_text = QTextEdit()
-        self.matrix2_text.setReadOnly(True)
+        # Adding matrix_A display
+        self.matrix_B_text = QTextEdit()
+        self.matrix_B_text.setReadOnly(True)
 
         # Adding result display
         self.matrix_result_text = QTextEdit()
         self.matrix_result_text.setReadOnly(True)
 
         # Creating layout for matrix show
-        matrix_layout = QHBoxLayout()
+        matrices_layout = QHBoxLayout()
         
-        # Creating layout for matrix 1
-        matrix1_layout = QVBoxLayout()
+        # Creating layout for matrix A
+        matrix_A_layout = QVBoxLayout()
 
         # Adding label and matrix to layout
-        matrix1_layout.addWidget(matrix1_label, alignment=Qt.AlignmentFlag.AlignCenter)
-        matrix1_layout.addWidget(self.matrix1_text)
+        matrix_A_layout.addWidget(matrix_A_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        matrix_A_layout.addWidget(self.matrix_A_text)
 
-        # Creating layout for matrix 2
-        matrix2_layout = QVBoxLayout()
+        # Creating layout for matrix B
+        matrix_B_layout = QVBoxLayout()
 
         # Adding label and matrix to layout
-        matrix2_layout.addWidget(matrix2_label, alignment=Qt.AlignmentFlag.AlignCenter)
-        matrix2_layout.addWidget(self.matrix2_text)
+        matrix_B_layout.addWidget(matrix_B_label, alignment=Qt.AlignmentFlag.AlignCenter)
+        matrix_B_layout.addWidget(self.matrix_B_text)
         
-        # Ading matrices layout to matrices layout
-        matrix_layout.addLayout(matrix1_layout)
-        matrix_layout.addLayout(matrix2_layout)
+        # Creating layout for operators between Two Matrices
+        operators_AB = QVBoxLayout()
 
-        # Create button for going back to menu
-        back_button = QPushButton("Back to Main Window")
-        back_button.clicked.connect(self.back_to_menu)
+        # Adding buttons for operators between Two Matrices
+        add_button = QPushButton('A + B')
+        add_button.clicked.connect(self.add_matrices)
+
+        subtract_button = QPushButton('A - B')
+        subtract_button.clicked.connect(self.subtract_matrices)
+
+        multiply_button = QPushButton('A * B')
+        multiply_button.clicked.connect(self.multipy_matrices)
+
+        # Adding operators to Layout
+        operators_AB.addWidget(add_button)
+        operators_AB.addWidget(subtract_button)
+        operators_AB.addWidget(multiply_button)
+
+        # Ading matrices layout and operators to matrices layout
+        matrices_layout.addLayout(matrix_A_layout)
+        matrices_layout.addLayout(operators_AB)
+        matrices_layout.addLayout(matrix_B_layout)
 
         # Creating main layout
         main_layout = QVBoxLayout()
 
         # Adding matrix show to main layout
-        main_layout.addLayout(matrix_layout)
+        main_layout.addLayout(matrices_layout)
 
         # Adding data buttons insert to main layout
         main_layout.addLayout(data_buttons_layout)
 
-        # Creating layout for operators
-        operators_layout_c1 = QVBoxLayout()
-        operators_layout_c2 = QVBoxLayout()
+        # Creating layout for operators for matrix A
+        operators_layout_MA = QVBoxLayout()
 
-        # Creating buttons for operators Column 1
-        add_button = QPushButton('Add')
-        add_button.clicked.connect(self.add_matrices)
+        # Creating buttons for operators matrix A
+        transpose_button_MA = QPushButton('Transpose A')
+        transpose_button_MA.clicked.connect(self.matrix_A_transpose)
 
-        subtract_button = QPushButton('Subtract')
-        subtract_button.clicked.connect(self.subtract_matrices)
+        det_button_MA = QPushButton('Determinant A')
+        det_button_MA.clicked.connect(self.matrix_A_det)
 
-        multiply_button = QPushButton('Multipy')
-        multiply_button.clicked.connect(self.multipy_matrices)
+        invert_button_MA = QPushButton('Invert A')
+        invert_button_MA.clicked.connect(self.matrix_A_invert)
 
-        transpose_button = QPushButton('Transpose')
-        transpose_button.clicked.connect(self.matrix1_transpose)
+        eigval_button_MA = QPushButton('Eigenvalues A')
+        eigval_button_MA.clicked.connect(self.matrix_A_eigvals)
 
-        invert_button = QPushButton('Invert')
-        invert_button.clicked.connect(self.matrix1_invert)
+        eigvect_button_MA = QPushButton('Eigenvectors A')
+        eigvect_button_MA.clicked.connect(self.matrix_A_eigvect)
 
-        # Adding operator buttons column 1 to layout
-        operators_layout_c1.addWidget(add_button)
-        operators_layout_c1.addWidget(subtract_button)
-        operators_layout_c1.addWidget(multiply_button)
-        operators_layout_c1.addWidget(transpose_button)
-        operators_layout_c1.addWidget(invert_button)
+        jordan_decomp_MA = QPushButton('Jordan A')
+        jordan_decomp_MA.clicked.connect(self.matrix_A_jordan)
 
-        # Creating buttons for operators Column 2
-        eigval_button = QPushButton('Eigenvalues')
-        eigval_button.clicked.connect(self.matrix1_eigvals)
+        # Adding operator buttons for matrix A
+        operators_layout_MA.addWidget(transpose_button_MA)
+        operators_layout_MA.addWidget(det_button_MA)
+        operators_layout_MA.addWidget(invert_button_MA)
+        operators_layout_MA.addWidget(eigval_button_MA)
+        operators_layout_MA.addWidget(eigvect_button_MA)
+        operators_layout_MA.addWidget(jordan_decomp_MA)
+        
+        # Creating layout for operators for matrix B
+        operators_layout_MB = QVBoxLayout()
 
-        eigvect_button = QPushButton('Eigenvectors')
-        eigvect_button.clicked.connect(self.matrix1_eigvect)
+        # Creating buttons for operators matrix B
+        transpose_button_MB = QPushButton('Transpose B')
+        transpose_button_MB.clicked.connect(self.matrix_B_transpose)
 
-        jordan_decomp = QPushButton('Jordan')
-        jordan_decomp.clicked.connect(self.matrix1_jordan)
+        det_button_MB = QPushButton('Determinant B')
+        det_button_MB.clicked.connect(self.matrix_B_det)
 
-        ph_1 = QPushButton('PH1')
-        ph_1.clicked.connect(self.ph1_func)
+        invert_button_MB = QPushButton('Invert B')
+        invert_button_MB.clicked.connect(self.matrix_B_invert)
 
-        ph_2 = QPushButton('PH2')
-        ph_2.clicked.connect(self.ph2_func)
+        eigval_button_MB = QPushButton('Eigenvalues B')
+        eigval_button_MB.clicked.connect(self.matrix_B_eigvals)
 
-        # Adding operator buttons column 2 to layout
-        operators_layout_c2.addWidget(eigval_button)
-        operators_layout_c2.addWidget(eigvect_button)
-        operators_layout_c2.addWidget(jordan_decomp)
-        operators_layout_c2.addWidget(ph_1)
-        operators_layout_c2.addWidget(ph_2)
+        eigvect_button_MB = QPushButton('Eigenvectors B')
+        eigvect_button_MB.clicked.connect(self.matrix_B_eigvect)
+
+        jordan_decomp_MB = QPushButton('Jordan B')
+        jordan_decomp_MB.clicked.connect(self.matrix_B_jordan)
+
+        # A dding operator buttons for matrix B
+        operators_layout_MB.addWidget(transpose_button_MB)
+        operators_layout_MB.addWidget(det_button_MB)
+        operators_layout_MB.addWidget(invert_button_MB)
+        operators_layout_MB.addWidget(eigval_button_MB)
+        operators_layout_MB.addWidget(eigvect_button_MB)
+        operators_layout_MB.addWidget(jordan_decomp_MB)
 
         # Creating layout for result matrix
         result_layout = QVBoxLayout()
@@ -162,12 +186,16 @@ class MatrixWindow(QWidget):
 
         # Creating layout for result matrix and operators
         res_operators_layout = QHBoxLayout()
+        res_operators_layout.addLayout(operators_layout_MA)
         res_operators_layout.addLayout(result_layout)
-        res_operators_layout.addLayout(operators_layout_c1)
-        res_operators_layout.addLayout(operators_layout_c2)
+        res_operators_layout.addLayout(operators_layout_MB)
 
         # Adding result and operators to main layout
         main_layout.addLayout(res_operators_layout)
+
+        # Create button for going back to menu
+        back_button = QPushButton("Back to Main Window")
+        back_button.clicked.connect(self.back_to_menu)
 
         # Adding back button to main layout
         main_layout.addWidget(back_button)
@@ -175,71 +203,88 @@ class MatrixWindow(QWidget):
         # Setting main layout of window
         self.setLayout(main_layout)
 
-    def matrix1_input(self):
+    def matrix_A_input(self):
         # Creating dialog for data input
         matrix_data = MatrixInputDialog()
 
         # Getting data from input
         matrix_data.exec()
-        self.matrix1 = matrix_data.getInputs()
+        self.matrix_A = matrix_data.getInputs()
 
-        # Updating matrix1 show widget
-        self.matrix1_text.setPlainText(str(self.matrix1))
+        # Updating matrix_A show widget
+        self.matrix_A_text.setPlainText(str(self.matrix_A))
 
-    def matrix2_input(self):
+    def matrix_B_input(self):
         # Creating dialog for data input
         matrix_data = MatrixInputDialog()
 
         # Getting data from input
         matrix_data.exec()
-        self.matrix2 = matrix_data.getInputs()
+        self.matrix_B = matrix_data.getInputs()
 
-        # Updating matrix1 show widget
-        self.matrix2_text.setPlainText(str(self.matrix2))
+        # Updating matrix_A show widget
+        self.matrix_B_text.setPlainText(str(self.matrix_B))
 
     def add_matrices(self):
-        self.matrix_result = self.matrix1 + self.matrix2
-        self.result_show()
+        self.matrix_R = self.matrix_A + self.matrix_B
+        self.result_show('A + B')
 
     def subtract_matrices(self):
-        self.matrix_result = self.matrix1 - self.matrix2
-        self.result_show()
+        self.matrix_R = self.matrix_A - self.matrix_B
+        self.result_show('A - B')
 
     def multipy_matrices(self):
-        self.matrix_result = self.matrix1 @ self.matrix2
-        self.result_show()
+        self.matrix_R = self.matrix_A @ self.matrix_B
+        self.result_show('A * B')
 
-    def matrix1_transpose(self):
-        self.matrix_result = np.transpose(self.matrix1)
-        self.matrix2_text.setPlainText('Matrix 1 transposed')
-        self.result_show()
+    def matrix_A_det(self):
+        self.matrix_R = linalg.det(self.matrix_A)
+        self.result_show('Determinant A')
 
-    def matrix1_invert(self):
-        self.matrix_result = linalg.inv(self.matrix1)
-        self.matrix2_text.setPlainText('Matrix 1 inverted')
-        self.result_show()
+    def matrix_A_transpose(self):
+        self.matrix_R = np.transpose(self.matrix_A)
+        self.result_show('Transpose A')
 
-    def matrix1_eigvals(self):
-        self.matrix_result, _ = linalg.eig(self.matrix1)
-        self.matrix2_text.setPlainText('Matrix 1 Eigvals')
-        self.result_show()
+    def matrix_A_invert(self):
+        self.matrix_R = linalg.inv(self.matrix_A)
+        self.result_show('Invert A')
 
-    def matrix1_eigvect(self):
-        _, self.matrix_result = linalg.eig(self.matrix1)
-        self.matrix2_text.setPlainText('Matrix 1 Eigvects')
-        self.result_show()
+    def matrix_A_eigvals(self):
+        self.matrix_R, _ = linalg.eig(self.matrix_A)
+        self.result_show('Eigenvalues A')
 
-    def matrix1_jordan(self):
+    def matrix_A_eigvect(self):
+        _, self.matrix_R = linalg.eig(self.matrix_A)
+        self.result_show('Eigenvectors A')
+
+    def matrix_A_jordan(self):
         pass
 
-    def ph1_func(self):
+    def matrix_B_det(self):
+        self.matrix_R = linalg.det(self.matrix_B)
+        self.result_show('Determinant B')
+
+    def matrix_B_transpose(self):
+        self.matrix_R = np.transpose(self.matrix_B)
+        self.result_show('Transpose B')
+
+    def matrix_B_invert(self):
+        self.matrix_R = linalg.inv(self.matrix_B)
+        self.result_show('Invert B')
+
+    def matrix_B_eigvals(self):
+        self.matrix_R, _ = linalg.eig(self.matrix_B)
+        self.result_show('Eigenvalues B')
+
+    def matrix_B_eigvect(self):
+        _, self.matrix_R = linalg.eig(self.matrix_B)
+        self.result_show('Eigenvectors B')
+
+    def matrix_B_jordan(self):
         pass
 
-    def ph2_func(self):
-        pass
-
-    def result_show(self):
-        self.matrix_result_text.setPlainText(str(self.matrix_result))
+    def result_show(self, msg):
+        self.matrix_result_text.setPlainText(msg + '\n' + str(self.matrix_R))
     
     # Function for going back to main menu
     def back_to_menu(self):
