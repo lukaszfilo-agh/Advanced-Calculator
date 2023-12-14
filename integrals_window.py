@@ -70,7 +70,7 @@ class IntegralsWindow(QDialog):
                 ['*', '/', 'sin()', 'cos()'],
                 ['+', '-', 'tg()', 'ctg()'],
                 ['.', '^', 'arcsin()', 'arccos()'],
-                ['(', ')', 'arctg()', ' '],
+                ['(', ')', 'arctg()', 'log()'],
                 ['π', 'e', '| |', 'sqrt()'],
                 ['x', ' ', '<-', 'C']
             ],
@@ -236,7 +236,7 @@ class IntegralsWindow(QDialog):
             func_math = eval(func)
 
             # Getting result for display:
-            res = str(sp.simplify(sp.integrate(func_math, x)))
+            res = str(sp.simplify(sp.integrate(func_math, x))) + " + C"
 
             # No result in elementary function:
             if res[0] == "⌠":
@@ -421,4 +421,6 @@ def convert_func_math(expression: str) -> str:
     # Change '\d sp.' to '\d*sp.'
     expression = re.sub(r'(\d)(sp)', r'\1*\2', expression)
 
+    # Change 'π' to 'sp.pi'
+    expression = re.sub(r'\bπ\b', 'sp.pi', expression)
     return expression
