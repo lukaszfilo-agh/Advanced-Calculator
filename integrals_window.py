@@ -1,7 +1,9 @@
 from typing import Union, List
-from scipy.integrate import quad
+from scipy.integrate import quad, IntegrationWarning
 import sympy as sp
 import numpy as np
+import warnings
+warnings.filterwarnings("error")
 
 from PyQt6.QtWidgets import (
     QPushButton,
@@ -274,9 +276,9 @@ class IntegralsWindow(QDialog):
     # Calcualting definite integrals:
     def __calc_definite_integrals(self, func: str, lim1: Union[float, int], lim2: Union[float, int]) -> None:
         try:
-            res = 0
 
-            # We need to evaluate (if lims are the same the result is 0):
+            res = 0 # If lims are equal - we do not need to evaluate.
+            # We need to evaluate:
             if lim1 != lim2:
                 # Creating lambda function:
                 def f(x): return eval(func)
@@ -293,12 +295,26 @@ class IntegralsWindow(QDialog):
             message_box.setWindowTitle("ERROR")
             message_box.setText(f"Division by zero!!!")
             message_box.exec()
+        except IntegrationWarning:
+            message_box = QMessageBox()
+            message_box.setWindowTitle("SOLUTION")
+            message_box.setText(f"Integral is not divergent")
+            message_box.exec()
+        except ValueError:
+            message_box = QMessageBox()
+            message_box.setWindowTitle("ERROR")
+            message_box.setText(f"Domain error")
+            message_box.exec()
+        except TypeError:
+            message_box = QMessageBox()
+            message_box.setWindowTitle("ERROR")
+            message_box.setText(f"Domain error")
+            message_box.exec()
         except Exception as e:
             print('different exception')
             message_box = QMessageBox()
             message_box.setWindowTitle("ERROR")
-            message_box.setText(
-                f"ERROR \n f(x) = {re.sub('sp.', '', func)} \n")
+            message_box.setText(f"ERROR \n f(x) = {re.sub('sp.', '', func)} \n")
             message_box.exec()
             print(e)
 
@@ -368,7 +384,7 @@ class LimError(Exception):
 
 def func_bad_chars(expression: str) -> List[str]:
     result = re.findall(
-        r'(?!(?:sin|arcsin|cos|arccos|tg|arctg|ctg|arctg|sqrt|e\^|\d+|[\(\)\+\-\*\/\^]|\dx|x))\b\S+\b', expression)
+        r'(?!(?:sin|arcsin|cos|arccos|tg|arctg|ctg|arctg|sqrt|log|e\^|\d+|[\(\)\+\-\*\/\^]|\dx|x|π))\b\S+\b', expression)
     return result
 
 
@@ -388,18 +404,17 @@ def convert_lim_math(expression: str) -> str:
     # Change 'e' to '*e'
     expression = re.sub(r'(\d)(e)', r'\1*\2', expression)
 
-    # Change 'π' to 'sp.pi'
-    expression = re.sub(r'π', 'sp.pi', expression)
+    # Change 'π' to 'np.pi'
+    expression = re.sub(r'π', 'np.pi', expression)
 
     # Change 'e' to 'sp.e'
-    expression = re.sub(r'e', 'sp.e', expression)
+    expression = re.sub(r'e', 'np.e', expression)
 
     # Change '∞' to 'inf'
     expression = re.sub(r'∞', 'np.inf', expression)
 
     # Change '\w np.' to '\w*np.'
     expression = re.sub(r'(\w)(np)', r'\1*\2', expression)
-
 
     return expression
 
@@ -411,7 +426,7 @@ def convert_func_math(expression: str) -> str:
     # Change 'e^x' to 'sp.exp(x)'
     expression = re.sub(r'e\^(.*)', r'sp.exp(\1)', expression)
 
-    # Change '||' to 'sp.abs(x):
+    # Change '||' to 'sp.Abs(x):
     expression = re.sub(r'\|(.*)\|', r'sp.Abs(\1)', expression)
 
     # Change 'sqrt()' to sp.sqrt():
@@ -450,7 +465,7 @@ def convert_func_math(expression: str) -> str:
     # Change ')(' to ')*('
     expression = expression.replace(')(', ')*(')
 
-    # Adding multiplication sing in 'x(' or ')x'
+    # Adding multiplication sign in 'x(' or ')x'
     expression = re.sub(r'([1-9x])(\()', r'\1*\2', expression)
     expression = re.sub(r'(\))([1-9x])', r'\1*\2', expression)
 
@@ -459,4 +474,5 @@ def convert_func_math(expression: str) -> str:
 
     # Change 'π' to 'sp.pi'
     expression = re.sub(r'\bπ\b', 'sp.pi', expression)
+
     return expression
