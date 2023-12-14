@@ -125,7 +125,7 @@ class PlotWindow(QWidget):
 
         try:
             # Creating vector with x values
-            xvals = np.arange(lim1 - 100, lim2 + 100, 0.01)
+            xvals = np.arange(lim1, lim2, 0.01)
 
             # Defining lambda function
             def fx(x): return eval(function_math)

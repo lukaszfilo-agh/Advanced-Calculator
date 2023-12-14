@@ -63,11 +63,11 @@ class PlotInputDialog(QDialog):
         # Creating keyboards
         self.keyboards = [
             [  # Keyboard for function
-                ['*', '/', 'sin()', 'cos()'],
-                ['+', '-', 'tg()', 'ctg()'],
-                ['.', '^', 'arcsin()', 'arccos()'],
-                ['(', ')', 'arctg()', 'log()'],
-                ['π', 'e', '| |', 'sqrt()'],
+                ['*', '/', 'sin', 'cos'],
+                ['+', '-', 'tg', 'ctg'],
+                ['.', '^', 'arcsin', 'arccos'],
+                ['(', ')', 'arctg', 'log'],
+                ['π', 'e', '| |', 'sqrt'],
                 ['x', ' ', '<-', 'C']
             ],
             [  # Keyboard for lower limit
@@ -348,6 +348,9 @@ def convert_func_math(expression):
     # Change 'x' to '*x'
     expression = re.sub(r'(\d)(x)', r'\1*\2', expression)
 
+    # Change 'lx' to 'l*x'
+    expression = re.sub(r'(\w)(x)', r'\1*\2', expression)
+
     # Change '^' to '**'
     expression = expression.replace('^', '**')
 
@@ -358,10 +361,16 @@ def convert_func_math(expression):
     expression = re.sub(r'([1-9x])(\()', r'\1*\2', expression)
     expression = re.sub(r'(\))([1-9x])', r'\1*\2', expression)
 
+    # Change 'π' to 'np.pi'
+    expression = re.sub(r'π', 'np.pi', expression)
+
+    # Change 'e' to 'np.e'
+    expression = re.sub(r'e', 'np.e', expression)
+
     # Change '\d np.' to '\d*np.'
     expression = re.sub(r'(\d)(np)', r'\1*\2', expression)
 
-    # Change 'π' to 'np.pi'
-    expression = re.sub(r'\bπ\b', 'np.pi', expression)
-
+    # Change '\w np.' to '\w*np.'
+    expression = re.sub(r'(\w)(np)', r'\1*\2', expression)
+    
     return expression
