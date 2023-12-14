@@ -15,6 +15,7 @@ matplotlib.use('QtAgg')
 
 import re
 
+import numpy as np
 
 class PlotInputDialog(QDialog):
     # Class for input dialog
@@ -62,11 +63,11 @@ class PlotInputDialog(QDialog):
         # Creating keyboards
         self.keyboards = [
             [  # Keyboard for function
-                ['*', '/', 'sin()', 'cos()'],
-                ['+', '-', 'tg()', 'ctg()'],
-                ['.', '^', 'arcsin()', 'arccos()'],
-                ['(', ')', 'arctg()', ' '],
-                ['π', 'e', '| |', 'sqrt()'],
+                ['*', '/', 'sin', 'cos'],
+                ['+', '-', 'tg', 'ctg'],
+                ['.', '^', 'arcsin', 'arccos'],
+                ['(', ')', 'arctg', 'log'],
+                ['π', 'e', '| |', 'sqrt'],
                 ['x', ' ', '<-', 'C']
             ],
             [  # Keyboard for lower limit
@@ -203,6 +204,16 @@ class PlotInputDialog(QDialog):
         # Catching errors for LimErrors
         except LimError:
             return None, None, None, None
+
+        except SyntaxError:
+            message_box = QMessageBox()
+            message_box.setWindowTitle("ERROR")
+            message_box.setText(f"Syntax error.")
+            print("Syntax error")
+            result = message_box.exec()
+            if result == QMessageBox.StandardButton.Ok:
+                print("Error closed")
+            return None, None, None, None
         
         return function_math, function_str, lim1, lim2
 
@@ -274,7 +285,7 @@ class LimError(Exception):
 
 def func_bad_chars(expression):
     result = re.findall(
-        r'(?!(?:sin|arcsin|cos|arccos|tg|arctg|ctg|arctg|sqrt|e\^|\d+|[\(\)\+\-\*\/\^]|\dx|x))\b\S+\b', expression)
+        r'(?!(?:sin|arcsin|cos|arccos|tg|arctg|ctg|arctg|sqrt|log|e\^|\d+|[\(\)\+\-\*\/\^]|\dx|x|π))\b\S+\b', expression)
     return result
 
 def lim_bad_chars(expression):
@@ -301,35 +312,44 @@ def convert_func_math(expression):
     # Change 'e^x' to 'np.exp(x)'
     expression = re.sub(r'e\^(.*)', r'np.exp(\1)', expression)
 
-    # Change 'e^x' to 'np.exp(x)'
+    # Change '||' to 'np.abs(x)'
     expression = re.sub(r'\|(.*)\|', r'np.abs(\1)', expression)
 
+    # Change 2l to 2*l
+    expression = re.sub(r'(\d)(\w)', r'\1*\2', expression)
+
     # Change 'sqrt()' to np.sqrt()
-    expression = re.sub(r'sqrt\b', 'np.sqrt', expression)
+    expression = re.sub(r'\bsqrt\b', 'np.sqrt', expression)
+
+    # Change 'log()' to 'np.log()'
+    expression = re.sub(r'\blog\b', 'np.log', expression)
 
     # Change 'sin' to 'np.sin'
-    expression = re.sub(r'sin\b', 'np.sin', expression)
+    expression = re.sub(r'\bsin\b', 'np.sin', expression)
 
     # Change 'arcsin' to 'np.arcsin'
-    expression = re.sub(r'arcsin\b', 'np.arcsin', expression)
+    expression = re.sub(r'\barcsin\b', 'np.arcsin', expression)
 
     # Change 'cos' to 'np.cos'
-    expression = re.sub(r'cos\b', 'np.cos', expression)
+    expression = re.sub(r'\bcos\b', 'np.cos', expression)
 
     # Change 'arccos' to 'np.arccos'
-    expression = re.sub(r'arccos\b', 'np.arccos', expression)
+    expression = re.sub(r'\barccos\b', 'np.arccos', expression)
 
     # Change 'tg' to 'np.tan'
-    expression = re.sub(r'tg\b', 'np.tan', expression)
+    expression = re.sub(r'\btg\b', 'np.tan', expression)
 
     # Change 'arctg' to 'np.arctan'
-    expression = re.sub(r'arctg\b', 'np.arctan', expression)
+    expression = re.sub(r'\barctg\b', 'np.arctan', expression)
 
     # Change 'ctg' to '1/np.tan'
-    expression = re.sub(r'ctg\b', '1/np.tan', expression)
+    expression = re.sub(r'\bctg\b', '1/np.tan', expression)
 
     # Change 'x' to '*x'
     expression = re.sub(r'(\d)(x)', r'\1*\2', expression)
+
+    # Change 'lx' to 'l*x'
+    expression = re.sub(r'(\w)(x)', r'\1*\2', expression)
 
     # Change '^' to '**'
     expression = expression.replace('^', '**')
@@ -341,7 +361,16 @@ def convert_func_math(expression):
     expression = re.sub(r'([1-9x])(\()', r'\1*\2', expression)
     expression = re.sub(r'(\))([1-9x])', r'\1*\2', expression)
 
+    # Change 'π' to 'np.pi'
+    expression = re.sub(r'π', 'np.pi', expression)
+
+    # Change 'e' to 'np.e'
+    expression = re.sub(r'e', 'np.e', expression)
+
     # Change '\d np.' to '\d*np.'
     expression = re.sub(r'(\d)(np)', r'\1*\2', expression)
 
+    # Change '\w np.' to '\w*np.'
+    expression = re.sub(r'(\w)(np)', r'\1*\2', expression)
+    
     return expression

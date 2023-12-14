@@ -125,17 +125,14 @@ class PlotWindow(QWidget):
 
         try:
             # Creating vector with x values
-            # xvals = np.arange(lim1 - 100, lim2 + 100, 0.01)
             xvals = np.arange(lim1, lim2, 0.01)
-            xvals_lim = np.arange(lim1, lim2, 0.01)
 
             # Defining lambda function
             def fx(x): return eval(function_math)
 
             # Calculating values for function
             yvals = fx(xvals)
-            y_n = yvals[0]
-            yvals_lim = fx(xvals_lim)
+
 
             # Checking for infs in yvals
             if np.isinf(yvals).any():
@@ -173,8 +170,6 @@ class PlotWindow(QWidget):
         # self.canvas.axes.set_xlim((lim1, lim2))
 
         # Setting lims for y axis
-        # ylim_min = np.min(yvals_lim)
-        # ylim_max = np.max(yvals_lim)
         # self.canvas.axes.set_ylim((ylim_min, ylim_max))
 
         # Displaying plot
