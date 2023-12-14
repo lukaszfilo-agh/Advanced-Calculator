@@ -46,7 +46,6 @@ class IntegralsWindow(QDialog):
 
         # Input fields labels:
         labels_text = ['f(x):', 'Lower limit:', 'Upper limit:']
-
         self.input_fields[0].installEventFilter(self)
         self.input_fields[1].installEventFilter(self)
         self.input_fields[2].installEventFilter(self)
@@ -67,11 +66,11 @@ class IntegralsWindow(QDialog):
         # Creating keyboards:
         self.keyboards = [
             [  # Keyboard for function:
-                ['*', '/', 'sin()', 'cos()'],
-                ['+', '-', 'tg()', 'ctg()'],
-                ['.', '^', 'arcsin()', 'arccos()'],
-                ['(', ')', 'arctg()', 'log()'],
-                ['π', 'e', '| |', 'sqrt()'],
+                ['*', '/', 'sin', 'cos'],
+                ['+', '-', 'tg', 'ctg'],
+                ['.', '^', 'arcsin', 'arccos'],
+                ['(', ')', 'arctg', 'log'],
+                ['π', 'e', '| |', 'sqrt'],
                 ['x', ' ', '<-', 'C']
             ],
             [  # Keyboard for lower limit:
@@ -180,51 +179,50 @@ class IntegralsWindow(QDialog):
     def __calc(self):
         function_str, lim1, lim2 = tuple(input.text() for input in self.input_fields)
 
-        if len(function_str) == 0:
-            raise EmptyInputError
+        try:
+            if len(function_str) == 0:
+                raise EmptyInputError
 
-        # Creating expression for eval:
-        function_math = convert_func_math(function_str)
+            # Creating expression for eval:
+            function_math = convert_func_math(function_str)
 
-        # If only 1 lim is empty we fill it with inf:
-        if lim1 == "" and lim2 != "":
-            lim1 = "inf"
-        elif lim2 == "" and lim1 != "":
-            lim2 = "inf"
+            # If both lim are empty then we move to indefinite integrals:
+            if lim1 == "" and lim2 == "":
+                self.__calc_indefinite_integrals(function_math)
 
-        # If both lim are empty then we move to indefinite integrals:
-        if lim1 == "" and lim2 == "":
-            self.__calc_indefinite_integrals(function_math)
-
-        # Else - definite integrals:
-        else:
-            # Checking for illegal characters in function str:
-            invalid_chars = func_bad_chars(function_str)
-            if len(invalid_chars) != 0:
-                raise InvalidCharacters(function_str)
-
-            # Checking for illegal characters in lim str:
-            lim1_invalid_chars = lim_bad_chars(lim1)
-            lim2_invalid_chars = lim_bad_chars(lim2)
-
-            if len(lim1_invalid_chars) != 0 or len(lim2_invalid_chars) != 0:
-                raise LimError(lim1, lim2, 0)
-
-            lim1 = convert_lim_math(lim1)
-            lim2 = convert_lim_math(lim2)
-
-            # Evaluating lim1 and lim2:
-            if lim1 in ["inf", "-inf"]:
-                lim1 = float(lim1)
+            # Else - definite integrals:
             else:
+                # Check for missing input:
+                if (lim1 == "" and lim2 != "") or (lim2 == "" and lim1 != ""):
+                    raise EmptyInputError
+
+                # Checking for illegal characters in function str:
+                invalid_chars = func_bad_chars(function_str)
+                if len(invalid_chars) != 0:
+                    raise InvalidCharacters(function_str)
+
+                # Checking for illegal characters in lim str:
+                lim1_invalid_chars = lim_bad_chars(lim1)
+                lim2_invalid_chars = lim_bad_chars(lim2)
+
+                if len(lim1_invalid_chars) != 0 or len(lim2_invalid_chars) != 0:
+                    raise LimError(lim1, lim2, 0)
+
+                # Converting lim to math expressions:
+                lim1 = convert_lim_math(lim1)
+                lim2 = convert_lim_math(lim2)
+
+                # Evaluating lim:
                 lim1 = eval(lim1)
-
-            if lim2 in ["inf", "-inf"]:
-                lim2 = float(lim2)
-            else:
                 lim2 = eval(lim2)
 
-            self.__calc_definite_integrals(function_math, lim1, lim2)
+                self.__calc_definite_integrals(function_math, lim1, lim2)
+        except EmptyInputError:
+            return
+        except InvalidCharacters:
+            return
+        except LimError:
+            return
 
     # Calculating indefinite integrals:
     def __calc_indefinite_integrals(self, func: str) -> None:
@@ -289,6 +287,7 @@ class CustomLineEdit(QLineEdit):
                         Qt.Key.Key_X,
                         Qt.Key.Key_Minus,
                         Qt.Key.Key_Plus,
+                        Qt.Key.Key_Period,
                         47,  # '/'
                         94,  # '^'
                         40,  # '('
@@ -342,11 +341,15 @@ def func_bad_chars(expression: str) -> List[str]:
 
 
 def lim_bad_chars(expression: str) -> List[str]:
-    result = re.findall(r'[^0-9eπ∞\-]', expression)
+    result = re.findall(r'[^0-9eπ∞.\-]', expression)
     return result
 
 
 def convert_lim_math(expression: str) -> str:
+
+    # Change 'lx' to 'l*x'
+    expression = re.sub(r'(\w)(x)', r'\1*\2', expression)
+
     # Change 'π' to '*π'
     expression = re.sub(r'(\d)(π)', r'\1*\2', expression)
 
@@ -354,16 +357,17 @@ def convert_lim_math(expression: str) -> str:
     expression = re.sub(r'(\d)(e)', r'\1*\2', expression)
 
     # Change 'π' to 'sp.pi'
-    expression = re.sub(r'\bπ\b', 'sp.pi', expression)
+    expression = re.sub(r'π', 'sp.pi', expression)
 
     # Change 'e' to 'sp.e'
-    expression = re.sub(r'\be\b', 'sp.e', expression)
+    expression = re.sub(r'e', 'sp.e', expression)
 
     # Change '∞' to 'inf'
-    expression = re.sub(r'\b∞\b', 'inf', expression)
+    expression = re.sub(r'∞', 'np.inf', expression)
 
-    # Change '-∞' to 'inf'
-    expression = re.sub(r'\b-∞\b', '-inf', expression)
+    # Change '\w np.' to '\w*np.'
+    expression = re.sub(r'(\w)(np)', r'\1*\2', expression)
+
 
     return expression
 
