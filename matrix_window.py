@@ -17,6 +17,8 @@ from scipy import linalg
 
 from matrix_input_dialog import MatrixInputDialog
 
+import re
+
 
 class MatrixWindow(QWidget):
     # Class for matrix operations
@@ -297,7 +299,9 @@ class MatrixWindow(QWidget):
             p) + '\n' + 'J' + '\n' + str(jordan) + '\n' + 'P_inv' + '\n' + str(pinv))
 
     def result_show(self, msg):
-        self.matrix_result_text.setPlainText(msg + '\n' + str(self.matrix_R))
+        m_str = np.array2string(self.matrix_R, formatter={
+                                'complexfloat': complex_to_string})
+        self.matrix_result_text.setPlainText(msg + '\n' + m_str)
 
     # Function for going back to main menu
     def back_to_menu(self):
@@ -312,3 +316,13 @@ class MatrixWindow(QWidget):
         qr.moveCenter(cp)
         self.move(qr.topLeft())
 
+
+def complex_to_string(c):
+    if c.imag == 0 and c.real != 0:
+        return '{0.real:.4f}'.format(c)
+    elif c.real == 0 and c.imag != 0:
+        return '{0.imag:.4f}j'.format(c)
+    elif c.real == 0 and c.imag == 0:
+        return '  0 '
+    else:
+        return '{0.real:.4f}+{0.imag:.4f}j'.format(c)

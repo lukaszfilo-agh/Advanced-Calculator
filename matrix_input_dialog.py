@@ -118,21 +118,15 @@ class MatrixInputDialog(QDialog):
             for j, input_field in enumerate(row_inputs):
                 value = input_field.text()
                 try:
+                    if value == '':
+                        raise EmptyInputError
                     res = re.findall(r'i', value)
                     if len(res) != 0:
                         value = value.replace('i', 'j')
                         value = complex(value)
                     else:
                         value = float(value)
-                except ValueError:
-                    self.conv_matrix = []
-                    message_box = QMessageBox()
-                    message_box.setWindowTitle("ERROR")
-                    message_box.setText(f"You have entered invalid input.")
-                    print("Invalid chars")
-                    result = message_box.exec()
-                    if result == QMessageBox.StandardButton.Ok:
-                        print("Error closed")
+                except EmptyInputError:
                     return
                 row_values.append(value)
             self.conv_matrix.append(row_values)
@@ -140,6 +134,20 @@ class MatrixInputDialog(QDialog):
     def getInputs(self):
         self.read_matrix()
         return np.array(self.conv_matrix)
+
+
+class EmptyInputError(Exception):
+    "Raised when data input is NULL"
+
+    def __init__(self) -> None:
+        super().__init__()
+        message_box = QMessageBox()
+        message_box.setWindowTitle("ERROR")
+        message_box.setText(f"Input cannot be empty.")
+        print("Input empty")
+        result = message_box.exec()
+        if result == QMessageBox.StandardButton.Ok:
+            print("Error closed")
 
 
 class RowColLineEdit(QLineEdit):
