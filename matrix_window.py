@@ -6,7 +6,8 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QTextEdit,
     QLabel,
-    QApplication
+    QApplication,
+    QMessageBox
 )
 
 from PyQt6.QtCore import Qt
@@ -16,8 +17,6 @@ import numpy as np
 from scipy import linalg
 
 from matrix_input_dialog import MatrixInputDialog
-
-import re
 
 
 class MatrixWindow(QWidget):
@@ -67,8 +66,8 @@ class MatrixWindow(QWidget):
         self.matrix_B_text.setReadOnly(True)
 
         # Adding result display
-        self.matrix_result_text = QTextEdit()
-        self.matrix_result_text.setReadOnly(True)
+        self.matrix_R_text = QTextEdit()
+        self.matrix_R_text.setReadOnly(True)
 
         # Creating layout for matrix show
         matrices_layout = QHBoxLayout()
@@ -187,7 +186,7 @@ class MatrixWindow(QWidget):
         # Adding result matrix to layout
         result_layout.addWidget(matrix_result_label,
                                 alignment=Qt.AlignmentFlag.AlignCenter)
-        result_layout.addWidget(self.matrix_result_text)
+        result_layout.addWidget(self.matrix_R_text)
 
         # Creating layout for result matrix and operators
         res_operators_layout = QHBoxLayout()
@@ -208,7 +207,10 @@ class MatrixWindow(QWidget):
         # Setting main layout of window
         self.setLayout(main_layout)
 
-    def matrix_A_input(self):
+    def matrix_A_input(self) -> None:
+        """
+        Method for inserting data to matrix A
+        """
         # Creating dialog for data input
         matrix_data = MatrixInputDialog()
 
@@ -219,7 +221,13 @@ class MatrixWindow(QWidget):
         # Updating matrix_A show widget
         self.matrix_A_text.setPlainText(str(self.matrix_A))
 
-    def matrix_B_input(self):
+        # Clearing result
+        self.matrix_R_text.setPlainText('')
+
+    def matrix_B_input(self) -> None:
+        """
+        Method for inserting data to matrix B
+        """
         # Creating dialog for data input
         matrix_data = MatrixInputDialog()
 
@@ -230,86 +238,179 @@ class MatrixWindow(QWidget):
         # Updating matrix_A show widget
         self.matrix_B_text.setPlainText(str(self.matrix_B))
 
-    def add_matrices(self):
+        # Clearing result
+        self.matrix_R_text.setPlainText('')
+
+    def add_matrices(self) -> None:
+        """
+        Method for adding matrices A and B
+
+        Raises
+        ----------
+        OperationError
+            If matrices are not same size
+        """
+        try:
+            if self.matrix_A.shape != self.matrix_B.shape:
+                raise OperationError('Matrices must be same size')
+        except OperationError:
+            return
+
         self.matrix_R = self.matrix_A + self.matrix_B
         self.result_show('A + B')
 
-    def subtract_matrices(self):
+    def subtract_matrices(self) -> None:
+        """
+        Method for adding matrices A and B
+
+        Raises
+        ----------
+        OperationError
+            If matrices are not same size
+        """
+        try:
+            if self.matrix_A.shape != self.matrix_B.shape:
+                raise OperationError('Matrices must be same size')
+        except OperationError:
+            return
+
         self.matrix_R = self.matrix_A - self.matrix_B
         self.result_show('A - B')
 
-    def multipy_matrices(self):
+    def multipy_matrices(self) -> None:
+        """
+        Method for multiplying matrices A and B
+
+        Raises
+        ----------
+        OperationError
+            If shapes of matrices don't match
+        """
+        try:
+            if self.matrix_A.shape[1] != self.matrix_B.shape[0]:
+                raise OperationError('Shapes of matrices do not match')
+        except OperationError:
+            return
         self.matrix_R = self.matrix_A @ self.matrix_B
         self.result_show('A * B')
 
-    def matrix_A_det(self):
+    def matrix_A_det(self) -> None:
+        """
+        Method for calculating determinant of matrix A
+
+        Raises
+        ----------
+        OperationError
+            If matrix A is not square
+        """
+        try:
+            if self.matrix_A.shape[0] != self.matrix_A.shape[1]:
+                raise OperationError('Matrix is not square')
+        except OperationError:
+            return
         self.matrix_R = linalg.det(self.matrix_A)
         self.result_show('Determinant A')
 
-    def matrix_A_transpose(self):
+    def matrix_A_transpose(self) -> None:
+        """
+        Method for transposing matrix A
+        """
         self.matrix_R = np.transpose(self.matrix_A)
         self.result_show('Transpose A')
 
-    def matrix_A_invert(self):
+    def matrix_A_invert(self) -> None:
+        """
+        Method for inverting matrix A
+
+        Raises
+        ----------
+        OperationError
+            If matrix A is not square or singular
+        """
+        try:
+            if self.matrix_A.shape[0] != self.matrix_A.shape[1]:
+                raise OperationError('Matrix is not square')
+            if linalg.det(self.matrix_A) == 0:
+                raise OperationError('Matrix is singular')
+        except OperationError:
+            return
         self.matrix_R = linalg.inv(self.matrix_A)
         self.result_show('Invert A')
 
-    def matrix_A_eigvals(self):
+    def matrix_A_eigvals(self) -> None:
         self.matrix_R, _ = linalg.eig(self.matrix_A)
         self.result_show('Eigenvalues A')
 
-    def matrix_A_eigvect(self):
+    def matrix_A_eigvect(self) -> None:
         _, self.matrix_R = linalg.eig(self.matrix_A)
         self.result_show('Eigenvectors A')
 
-    def matrix_A_jordan(self):
+    def matrix_A_jordan(self) -> None:
         eigvals, eigvects = linalg.eig(self.matrix_A)
         jordan = np.diag(eigvals)
         p = eigvects
         pinv = linalg.inv(eigvects)
-        self.matrix_result_text.setPlainText('Matrix A Jordan\n' + 'P' + '\n' + str(
+        self.matrix_R_text.setPlainText('Matrix A Jordan\n' + 'P' + '\n' + str(
             p) + '\n' + 'J' + '\n' + str(jordan) + '\n' + 'P_inv' + '\n' + str(pinv))
 
-    def matrix_B_det(self):
+    def matrix_B_det(self) -> None:
+        try:
+            if self.matrix_B.shape[0] != self.matrix_B.shape[1]:
+                raise OperationError('Matrix is not square')
+        except OperationError:
+            return
         self.matrix_R = linalg.det(self.matrix_B)
         self.result_show('Determinant B')
 
-    def matrix_B_transpose(self):
+    def matrix_B_transpose(self) -> None:
         self.matrix_R = np.transpose(self.matrix_B)
         self.result_show('Transpose B')
 
-    def matrix_B_invert(self):
+    def matrix_B_invert(self) -> None:
         self.matrix_R = linalg.inv(self.matrix_B)
         self.result_show('Invert B')
 
-    def matrix_B_eigvals(self):
+    def matrix_B_eigvals(self) -> None:
         self.matrix_R, _ = linalg.eig(self.matrix_B)
         self.result_show('Eigenvalues B')
 
-    def matrix_B_eigvect(self):
+    def matrix_B_eigvect(self) -> None:
         _, self.matrix_R = linalg.eig(self.matrix_B)
         self.result_show('Eigenvectors B')
 
-    def matrix_B_jordan(self):
+    def matrix_B_jordan(self) -> None:
         eigvals, eigvects = linalg.eig(self.matrix_B)
         jordan = np.diag(eigvals)
         p = eigvects
         pinv = linalg.inv(eigvects)
-        self.matrix_result_text.setPlainText('Matrix B Jordan\n' + 'P' + '\n' + str(
+        self.matrix_R_text.setPlainText('Matrix B Jordan\n' + 'P' + '\n' + str(
             p) + '\n' + 'J' + '\n' + str(jordan) + '\n' + 'P_inv' + '\n' + str(pinv))
 
-    def result_show(self, msg):
+    def result_show(self, message: str) -> None:
+        """
+        Method for updating result view
+
+        Parameters
+        ----------
+        message : str 
+            A message that appears above the result.
+        """
+
         m_str = np.array2string(self.matrix_R, formatter={
                                 'complexfloat': complex_to_string})
-        self.matrix_result_text.setPlainText(msg + '\n' + m_str)
+        self.matrix_R_text.setPlainText(message + '\n' + m_str)
 
-    # Function for going back to main menu
-    def back_to_menu(self):
+    def back_to_menu(self) -> None:
+        """
+        Method for going back to main menu
+        """
         self.close()
         self.parent.show()
 
-    # Method for centering windows
-    def center(self):
+    def center(self) -> None:
+        """
+        Method for centering windows
+        """
         qr = self.frameGeometry()
         cp = self.screen().availableGeometry().center()
 
@@ -326,3 +427,19 @@ def complex_to_string(c):
         return '  0 '
     else:
         return '{0.real:.4f}+{0.imag:.4f}j'.format(c)
+
+
+class OperationError(Exception):
+    """
+    Class for operation error
+    """
+
+    def __init__(self, msg: str) -> None:
+        super().__init__()
+        message_box = QMessageBox()
+        message_box.setWindowTitle("ERROR")
+        message_box.setText(msg)
+        print("Input empty")
+        result = message_box.exec()
+        if result == QMessageBox.StandardButton.Ok:
+            print("Error closed")

@@ -175,6 +175,7 @@ class MatrixInputLineEdit(QLineEdit):
                         Qt.Key.Key_Left,
                         Qt.Key.Key_Right,
                         Qt.Key.Key_I,
+                        Qt.Key.Key_Minus,
                         46  # '.'
                         ]
         print(event.key())
