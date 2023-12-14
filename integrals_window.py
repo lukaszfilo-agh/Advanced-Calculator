@@ -1,7 +1,7 @@
 from typing import Union, List
 from scipy.integrate import quad
 import sympy as sp
-from sympy import oo
+import numpy as np
 
 from PyQt6.QtWidgets import (
     QPushButton,
@@ -67,11 +67,11 @@ class IntegralsWindow(QDialog):
         # Creating keyboards:
         self.keyboards = [
             [  # Keyboard for function:
-                ['*', '/', 'sin()', 'cos()'],
-                ['+', '-', 'tg()', 'ctg()'],
-                ['.', '^', 'arcsin()', 'arccos()'],
-                ['(', ')', 'arctg()', 'log()'],
-                ['π', 'e', '| |', 'sqrt()'],
+                ['*', '/', 'sin', 'cos'],
+                ['+', '-', 'tg', 'ctg'],
+                ['.', '^', 'arcsin', 'arccos'],
+                ['(', ')', 'arctg', 'log'],
+                ['π', 'e', '| |', 'sqrt'],
                 ['x', ' ', '<-', 'C']
             ],
             [  # Keyboard for lower limit:
@@ -187,18 +187,16 @@ class IntegralsWindow(QDialog):
             # Creating expression for eval:
             function_math = convert_func_math(function_str)
 
-            # If only 1 lim is empty we fill it with inf:
-            if lim1 == "" and lim2 != "":
-                lim1 = "inf"
-            elif lim2 == "" and lim1 != "":
-                lim2 = "inf"
-
             # If both lim are empty then we move to indefinite integrals:
             if lim1 == "" and lim2 == "":
                 self.__calc_indefinite_integrals(function_math)
 
             # Else - definite integrals:
             else:
+                # Check for missing input:
+                if (lim1 == "" and lim2 != "") or (lim2 == "" and lim1 != ""):
+                    raise EmptyInputError
+
                 # Checking for illegal characters in function str:
                 invalid_chars = func_bad_chars(function_str)
                 if len(invalid_chars) != 0:
@@ -276,10 +274,15 @@ class IntegralsWindow(QDialog):
     # Calcualting definite integrals:
     def __calc_definite_integrals(self, func: str, lim1: Union[float, int], lim2: Union[float, int]) -> None:
         try:
-            # Creating lambda function:
-            def f(x): return eval(func)
-            print(lim1, lim2)
-            res, _= quad(f, lim1, lim2)
+            res = 0
+
+            # We need to evaluate (if lims are the same the result is 0):
+            if lim1 != lim2:
+                # Creating lambda function:
+                def f(x): return eval(func)
+
+                # Calculating
+                res, _ = quad(f, lim1, lim2)
 
             message_box = QMessageBox()
             message_box.setWindowTitle("SOLUTION")
@@ -316,6 +319,7 @@ class CustomLineEdit(QLineEdit):
                         Qt.Key.Key_X,
                         Qt.Key.Key_Minus,
                         Qt.Key.Key_Plus,
+                        Qt.Key.Key_Period,
                         47,  # '/'
                         94,  # '^'
                         40,  # '('
@@ -374,6 +378,10 @@ def lim_bad_chars(expression: str) -> List[str]:
 
 
 def convert_lim_math(expression: str) -> str:
+
+    # Change 'lx' to 'l*x'
+    expression = re.sub(r'(\w)(x)', r'\1*\2', expression)
+
     # Change 'π' to '*π'
     expression = re.sub(r'(\d)(π)', r'\1*\2', expression)
 
@@ -381,13 +389,17 @@ def convert_lim_math(expression: str) -> str:
     expression = re.sub(r'(\d)(e)', r'\1*\2', expression)
 
     # Change 'π' to 'sp.pi'
-    expression = re.sub(r'\bπ\b', 'sp.pi', expression)
+    expression = re.sub(r'π', 'sp.pi', expression)
 
     # Change 'e' to 'sp.e'
-    expression = re.sub(r'\be\b', 'sp.e', expression)
+    expression = re.sub(r'e', 'sp.e', expression)
 
     # Change '∞' to 'inf'
-    expression = re.sub(r'\b∞\b', 'sp.oo', expression)
+    expression = re.sub(r'∞', 'np.inf', expression)
+
+    # Change '\w np.' to '\w*np.'
+    expression = re.sub(r'(\w)(np)', r'\1*\2', expression)
+
 
     return expression
 

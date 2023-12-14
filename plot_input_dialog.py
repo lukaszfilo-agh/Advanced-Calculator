@@ -229,6 +229,7 @@ class CustomLineEdit(QLineEdit):
                         Qt.Key.Key_X,
                         Qt.Key.Key_Minus,
                         Qt.Key.Key_Plus,
+                        Qt.Key.Key_Period,
                         47,  # '/'
                         94,  # '^'
                         40,  # '('
