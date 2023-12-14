@@ -6,12 +6,15 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QGridLayout,
     QDialog,
-    QPushButton
+    QPushButton,
+    QMessageBox
 )
 
 from PyQt6.QtCore import Qt
 
 import numpy as np
+
+import re
 
 
 class MatrixInputDialog(QDialog):
@@ -97,11 +100,11 @@ class MatrixInputDialog(QDialog):
                 row_labels = []
                 row_inputs = []
                 for j in range(cols):
-                    label = QLabel(f"[{i}][{j}]:")
+                    # label = QLabel(f"[{i}][{j}]:")
                     input_field = MatrixInputLineEdit()
                     # self.matrix_layout.addWidget(label, i, j * 2)
                     self.matrix_layout.addWidget(input_field, i, j * 2 + 1)
-                    row_labels.append(label)
+                    # row_labels.append(label)
                     row_inputs.append(input_field)
                 self.matrix_labels.append(row_labels)
                 self.matrix_inputs.append(row_inputs)
@@ -115,9 +118,22 @@ class MatrixInputDialog(QDialog):
             for j, input_field in enumerate(row_inputs):
                 value = input_field.text()
                 try:
-                    value = float(value)
+                    res = re.findall(r'i', value)
+                    if len(res) != 0:
+                        value = value.replace('i', 'j')
+                        value = complex(value)
+                    else:
+                        value = float(value)
                 except ValueError:
-                    value = None
+                    self.conv_matrix = []
+                    message_box = QMessageBox()
+                    message_box.setWindowTitle("ERROR")
+                    message_box.setText(f"You have entered invalid input.")
+                    print("Invalid chars")
+                    result = message_box.exec()
+                    if result == QMessageBox.StandardButton.Ok:
+                        print("Error closed")
+                    return
                 row_values.append(value)
             self.conv_matrix.append(row_values)
 

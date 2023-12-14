@@ -32,7 +32,7 @@ class MatrixWindow(QWidget):
         # Setting name of window
         self.setWindowTitle("Matrix Calculator")
         # Rezisizing window
-        self.setFixedSize(500, 700)
+        self.setFixedSize(600, 600)
         # Centering window
         self.center()
 
