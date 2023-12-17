@@ -239,6 +239,9 @@ class IntegralsWindow(QDialog):
             # Getting result for display:
             res = str(sp.simplify(sp.integrate(func_math, x))) + " + C"
 
+            # Substituting representation so that functions match keyboard names:
+            res = substitute_sympy_representation(res)
+
             # No result in elementary function:
             if res[0] in ["⌠", "I"]:
                 message_box = QMessageBox()
@@ -384,36 +387,37 @@ class LimError(Exception):
         message_box.exec()
 
 
-# def substitute_sympy_representation(sympy_repr: str) -> str:
-#     # Creating variables for easier function names substitutions:
-#     funcs_to_subs = ["exp", "asin", "acos", "atan", "tan"]
-#     subs = ["e^", "arcsin", "arccos", "arctg", "tg"]
-#     match_funcs_to_subs = {func: sub for func, sub in zip(funcs_to_subs, subs)}
-#
-#     # Iterating through all possible function occurences:
-#     for func in funcs_to_subs:
-#         if func in sympy_repr:
-#             sub = match_funcs_to_subs[func]
-#             # Regular expression to swap func() to according sub:
-#             regex = re.compile(rf'{sub}\(([^)]+)\)')
-#
-#             # Helper function to substitute:
-#             def sub_with_brackets(match) -> str:
-#                 brackets = match.group(1)
-#                 return f'{sub}({brackets})'
-#
-#             # Substitution:
-#             sympy_repr = regex.sub(sub_with_brackets, sympy_repr)
-#             print(sympy_repr)
-#     # # Creating variables for easier symbols substitutions:
-#     # symbols_to_sub = ["pi", "E"]
-#     # subs = ["π", "e"]
-#     # match_symbols_to_subs = {symbol: sub for symbol, sub in zip(symbols_to_sub, subs)}
-#     # for symbol in symbols_to_sub:
-#     #     if symbol in sympy_repr:
-#     #         sub = match_symbols_to_subs[symbol]
-#     #         sympy_repr.replace(symbol, sub)
-#     return sympy_repr
+# Helper function to substitute sympy functions representations for keyboard ones:
+def substitute_sympy_representation(sympy_repr: str) -> str:
+    # Creating variables for easier function names substitutions:
+    funcs_to_subs = ["exp", "asin", "acos", "atan", "tan"]
+    subs = ["e^", "arcsin", "arccos", "arctg", "tg"]
+    match_funcs_to_subs = {func: sub for func, sub in zip(funcs_to_subs, subs)}
+
+    # Iterating through all possible function occurences:
+    for func in funcs_to_subs:
+        if func in sympy_repr:
+            sub = match_funcs_to_subs[func]
+            # Regular expression to swap func() to according sub:
+            regex = re.compile(fr'{func}\(([^)]+)\)')
+
+            # Helper function to substitute:
+            def sub_with_brackets(match) -> str:
+                brackets = match.group(1)
+                return f'{sub}({brackets})'
+
+            # Substitution:
+            sympy_repr = regex.sub(sub_with_brackets, sympy_repr)
+
+    # Creating variables for easier symbols substitutions:
+    symbols_to_sub = ["pi", "E"]
+    subs = ["π", "e"]
+    match_symbols_to_subs = {symbol: sub for symbol, sub in zip(symbols_to_sub, subs)}
+    for symbol in symbols_to_sub:
+        if symbol in sympy_repr:
+            sub = match_symbols_to_subs[symbol]
+            sympy_repr = sympy_repr.replace(symbol, sub)
+    return sympy_repr
 
 
 def func_bad_chars(expression: str) -> List[str]:
@@ -513,7 +517,7 @@ def convert_func_math(expression: str) -> str:
     expression = re.sub(r'\bπ\b', 'sp.pi', expression)
 
     # Change 'e' to 'sp.e'
-    expression = re.sub(r'e', 'sp.e', expression)
+    expression = re.sub(r'e', 'sp.E', expression)
 
     # Change '\w np.' to '\w*sp.'
     expression = re.sub(r'(\w)(sp)', r'\1*\2', expression)
