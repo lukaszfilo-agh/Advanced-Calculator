@@ -1,9 +1,13 @@
 from typing import Union, List
 from scipy.integrate import quad, IntegrationWarning
+from sympy.calculus.singularities import singularities
+from sympy.calculus.util import continuous_domain
+from sympy import Interval
 import sympy as sp
 import numpy as np
 import warnings
 warnings.filterwarnings("error")
+
 
 from PyQt6.QtWidgets import (
     QPushButton,
@@ -288,9 +292,80 @@ class IntegralsWindow(QDialog):
                 # Creating lambda function:
                 def f(x): return eval(func)
 
-                # Calculating
-                res, _ = quad(f, lim1, lim2)
+                # We have symmetry in lim:
+                if lim1 == -lim2:
+                    # Symbolic variable:
+                    x = sp.symbols('x', real=True)
 
+                    # Evaluating function using sympy:
+                    func_sympy = eval(func)
+
+                    # Check if function is odd:
+                    if func_sympy == -func_sympy.subs(x, -x):
+                        # We keep 0 as a result
+                        pass
+                    # Check if function is even:
+                    elif func_sympy == func_sympy.subs(x, -x):
+                        # Choose larger lim - we can now calculate our integral as
+                        # 2 * I(0, lim) instead of I(lim1, lim2):
+                        lim = lim2 if lim2 > lim1 else lim1
+
+                        # Remember the sign for changed limits:
+                        sign = 1
+                        if lim2 < lim1:
+                            sign *= -1
+
+                        # Find function singularities:
+                        sing = singularities(func_sympy, x)
+
+                        # Getting domain of our function:
+                        domain = continuous_domain(func_sympy, x, sp.Reals)
+
+                        # If we have singularities or integral interval is not in function continuous domain:
+                        if sing or not domain.contains(Interval(0, lim)):
+                            # Try using sympy.integrate:
+                            res = 2 * sign * sp.integrate(func_sympy, (x, 0, lim))
+                        # Else - use scipy:
+                        else:
+                            res, _ = quad(f, 0, lim2)
+                            res *= 2 * sign
+                    else:
+                        # Symbolic variable:
+                        x = sp.symbols('x', real=True)
+
+                        # Evaluating function using sympy:
+                        func_sympy = eval(func)
+
+                        # Getting domain of our function:
+                        domain = continuous_domain(func_sympy, x, sp.Reals)
+
+                        # Integral interval is in function continous domain - we may use scipy (no complex):
+                        if domain.contains(Interval(lim1, lim2)):
+                            # Calculating numerically:
+                            res, _ = quad(f, lim1, lim2)
+
+                        # Use sympy to calculate result - complex solution:
+                        else:
+                            res = sp.integrate(func_sympy, (x, lim1, lim2))
+                else:
+                    # Symbolic variable:
+                    x = sp.symbols('x', real=True)
+
+                    # Evaluating function using sympy:
+                    func_sympy = eval(func)
+
+                    domain = continuous_domain(func_sympy, x, sp.Reals)
+
+                    # Integral interval is in function continous domain - we may use scipy (no complex):
+                    if domain.contains(Interval(lim1, lim2)):
+                        # Calculating numerically:
+                        res, _ = quad(f, lim1, lim2)
+
+                    # Use sympy to calculate result - complex solution:
+                    else:
+                        res = sp.integrate(func_sympy, (x, lim1, lim2))
+                        if res == sp.nan:
+                            raise IntegrationWarning
             message_box = QMessageBox()
             message_box.setWindowTitle("SOLUTION")
             message_box.setText(f"Integral of your function:\n{res}")
@@ -313,7 +388,7 @@ class IntegralsWindow(QDialog):
         except TypeError:
             message_box = QMessageBox()
             message_box.setWindowTitle("ERROR")
-            message_box.setText(f"Domain error")
+            message_box.setText(f"Complex domain results are not supported.")
             message_box.exec()
         except Exception as e:
             print('different exception')
