@@ -86,6 +86,8 @@ class MatrixInputDialog(QDialog):
 
     def update_matrix(self):
         try:
+            if self.rows_input.text() == '' or self.cols_input.text() == '':
+                raise EmptyInputError
             rows = int(self.rows_input.text())
             cols = int(self.cols_input.text())
 
@@ -109,8 +111,11 @@ class MatrixInputDialog(QDialog):
                 self.matrix_labels.append(row_labels)
                 self.matrix_inputs.append(row_inputs)
 
+        except EmptyInputError:
+            return
+
         except ValueError:
-            pass
+            print('value error')
 
     def read_matrix(self):
         for i, row_inputs in enumerate(self.matrix_inputs):
@@ -127,13 +132,17 @@ class MatrixInputDialog(QDialog):
                     else:
                         value = float(value)
                 except EmptyInputError:
+                    self.conv_matrix = None
                     return
                 row_values.append(value)
             self.conv_matrix.append(row_values)
 
     def getInputs(self):
         self.read_matrix()
-        return np.array(self.conv_matrix)
+        if self.conv_matrix == None:
+            return None
+        else:
+            return np.array(self.conv_matrix)
 
 
 class EmptyInputError(Exception):
