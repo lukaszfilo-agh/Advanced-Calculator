@@ -319,6 +319,9 @@ def convert_func_math(expression):
     # Change 2l to 2*l
     expression = re.sub(r'(\d)(\w)', r'\1*\2', expression)
 
+    # Change xl to x*l
+    expression = re.sub(r'(x)(\w)', r'\1*\2', expression)
+
     # Change 'sqrt()' to np.sqrt()
     expression = re.sub(r'\bsqrt\b', 'np.sqrt', expression)
 
@@ -373,5 +376,8 @@ def convert_func_math(expression):
 
     # Change '\w np.' to '\w*np.'
     expression = re.sub(r'(\w)(np)', r'\1*\2', expression)
-    
+
+    # Change 'xnp' to 'x * np'
+    expression = re.sub(r'(x)(np)', r'\1*\2', expression)
+
     return expression
