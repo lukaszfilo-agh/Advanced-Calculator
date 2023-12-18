@@ -1,6 +1,13 @@
 from typing import Union, List
-from scipy.integrate import quad
+from scipy.integrate import quad, IntegrationWarning
+from sympy.calculus.singularities import singularities
+from sympy.calculus.util import continuous_domain
+from sympy import Interval
 import sympy as sp
+import numpy as np
+import warnings
+warnings.filterwarnings("error")
+
 
 from PyQt6.QtWidgets import (
     QPushButton,
@@ -236,13 +243,19 @@ class IntegralsWindow(QDialog):
             # Getting result for display:
             res = str(sp.simplify(sp.integrate(func_math, x))) + " + C"
 
+            # Substituting representation so that functions match keyboard names:
+            res = substitute_sympy_representation(res)
+
             # No result in elementary function:
-            if res[0] == "⌠":
+            if res[0] in ["⌠", "I"]:
                 message_box = QMessageBox()
                 message_box.setWindowTitle("NOT ABLE TO SOLVE")
-                message_box.setText("There may be no solution in the elementary functions.")
+                message_box.setText("Not able to find primary funtion.")
                 message_box.exec()
+                print(res)
             else:
+                # Swap possible sympy names for mathematical ones:
+                # res = substitute_sympy_representation(res)
                 message_box = QMessageBox()
                 message_box.setWindowTitle("SOLUTION")
                 message_box.setText(f"Primary function to your integral:\n\n{res}")
@@ -272,7 +285,123 @@ class IntegralsWindow(QDialog):
 
     # Calcualting definite integrals:
     def __calc_definite_integrals(self, func: str, lim1: Union[float, int], lim2: Union[float, int]) -> None:
-        pass
+        try:
+
+            res = 0 # If lims are equal - we do not need to evaluate.
+            # We need to evaluate:
+            if lim1 != lim2:
+                # Creating lambda function:
+                def f(x): return eval(func)
+
+                # We have symmetry in lim:
+                if lim1 == -lim2:
+                    # Symbolic variable:
+                    x = sp.symbols('x', real=True)
+
+                    # Evaluating function using sympy:
+                    func_sympy = eval(func)
+
+                    # Check if function is odd:
+                    if func_sympy == -func_sympy.subs(x, -x):
+                        # We keep 0 as a result
+                        pass
+                    # Check if function is even:
+                    elif func_sympy == func_sympy.subs(x, -x):
+                        # Choose larger lim - we can now calculate our integral as
+                        # 2 * I(0, lim) instead of I(lim1, lim2):
+                        lim = lim2 if lim2 > lim1 else lim1
+
+                        # Remember the sign for changed limits:
+                        sign = 1
+                        if lim2 < lim1:
+                            sign *= -1
+
+                        # Find function singularities:
+                        sing = singularities(func_sympy, x)
+
+                        # Getting domain of our function:
+                        domain = continuous_domain(func_sympy, x, sp.Reals)
+
+                        # If we have singularities or integral interval is not in function continuous domain:
+                        if sing or not domain.contains(Interval(0, lim)):
+                            # Try using sympy.integrate:
+                            res = 2 * sign * sp.integrate(func_sympy, (x, 0, lim))
+                        # Else - use scipy:
+                        else:
+                            res, _ = quad(f, 0, lim2)
+                            res *= 2 * sign
+                    else:
+                        # Symbolic variable:
+                        x = sp.symbols('x', real=True)
+
+                        # Evaluating function using sympy:
+                        func_sympy = eval(func)
+
+                        # Getting domain of our function:
+                        domain = continuous_domain(func_sympy, x, sp.Reals)
+
+                        # Integral interval is in function continous domain - we may use scipy (no complex):
+                        if domain.contains(Interval(lim1, lim2)):
+                            # Calculating numerically:
+                            res, _ = quad(f, lim1, lim2)
+
+                        # Use sympy to calculate result - complex solution:
+                        else:
+                            res = sp.integrate(func_sympy, (x, lim1, lim2))
+                else:
+                    # Symbolic variable:
+                    x = sp.symbols('x', real=True)
+
+                    # Evaluating function using sympy:
+                    func_sympy = eval(func)
+
+                    domain = continuous_domain(func_sympy, x, sp.Reals)
+
+                    # Integral interval is in function continous domain - we may use scipy (no complex):
+                    if domain.contains(Interval(lim1, lim2)):
+                        # Calculating numerically:
+                        res, _ = quad(f, lim1, lim2)
+
+                    # Use sympy to calculate result - complex solution:
+                    else:
+                        res = sp.integrate(func_sympy, (x, lim1, lim2))
+                        if res == sp.nan:
+                            raise IntegrationWarning
+            message_box = QMessageBox()
+            message_box.setWindowTitle("SOLUTION")
+            message_box.setText(f"Integral of your function:\n{res}")
+            message_box.exec()
+        except ZeroDivisionError:
+            message_box = QMessageBox()
+            message_box.setWindowTitle("ERROR")
+            message_box.setText(f"Division by zero!!!")
+            message_box.exec()
+        except IntegrationWarning:
+            message_box = QMessageBox()
+            message_box.setWindowTitle("SOLUTION")
+            message_box.setText(f"Integral is not divergent")
+            message_box.exec()
+        except ValueError:
+            message_box = QMessageBox()
+            message_box.setWindowTitle("ERROR")
+            message_box.setText(f"Domain error")
+            message_box.exec()
+        except TypeError:
+            message_box = QMessageBox()
+            message_box.setWindowTitle("ERROR")
+            message_box.setText(f"Complex domain results are not supported.")
+            message_box.exec()
+        except Exception as e:
+            print('different exception')
+            message_box = QMessageBox()
+            message_box.setWindowTitle("ERROR")
+            message_box.setText(f"ERROR \n f(x) = {re.sub('sp.', '', func)} \n")
+            message_box.exec()
+            print(e)
+
+            # Clearing the input:
+            for line_edit in self.input_fields:
+                line_edit.setText("")
 
 
 # Class for custom line edit with keyboard filtering
@@ -334,9 +463,42 @@ class LimError(Exception):
         message_box.exec()
 
 
+# Helper function to substitute sympy functions representations for keyboard ones:
+def substitute_sympy_representation(sympy_repr: str) -> str:
+    # Creating variables for easier function names substitutions:
+    funcs_to_subs = ["exp", "asin", "acos", "atan", "tan"]
+    subs = ["e^", "arcsin", "arccos", "arctg", "tg"]
+    match_funcs_to_subs = {func: sub for func, sub in zip(funcs_to_subs, subs)}
+
+    # Iterating through all possible function occurences:
+    for func in funcs_to_subs:
+        if func in sympy_repr:
+            sub = match_funcs_to_subs[func]
+            # Regular expression to swap func() to according sub:
+            regex = re.compile(fr'{func}\(([^)]+)\)')
+
+            # Helper function to substitute:
+            def sub_with_brackets(match) -> str:
+                brackets = match.group(1)
+                return f'{sub}({brackets})'
+
+            # Substitution:
+            sympy_repr = regex.sub(sub_with_brackets, sympy_repr)
+
+    # Creating variables for easier symbols substitutions:
+    symbols_to_sub = ["pi", "E"]
+    subs = ["π", "e"]
+    match_symbols_to_subs = {symbol: sub for symbol, sub in zip(symbols_to_sub, subs)}
+    for symbol in symbols_to_sub:
+        if symbol in sympy_repr:
+            sub = match_symbols_to_subs[symbol]
+            sympy_repr = sympy_repr.replace(symbol, sub)
+    return sympy_repr
+
+
 def func_bad_chars(expression: str) -> List[str]:
     result = re.findall(
-        r'(?!(?:sin|arcsin|cos|arccos|tg|arctg|ctg|arctg|sqrt|e\^|\d+|[\(\)\+\-\*\/\^]|\dx|x))\b\S+\b', expression)
+        r'(?!(?:sin|arcsin|cos|arccos|tg|arctg|ctg|arctg|sqrt|log|e\^|\d+|[\(\)\+\-\*\/\^]|\dx|x|π))\b\S+\b', expression)
     return result
 
 
@@ -356,18 +518,18 @@ def convert_lim_math(expression: str) -> str:
     # Change 'e' to '*e'
     expression = re.sub(r'(\d)(e)', r'\1*\2', expression)
 
-    # Change 'π' to 'sp.pi'
-    expression = re.sub(r'π', 'sp.pi', expression)
+
+    # Change 'π' to 'np.pi'
+    expression = re.sub(r'π', 'np.pi', expression)
 
     # Change 'e' to 'sp.e'
-    expression = re.sub(r'e', 'sp.e', expression)
+    expression = re.sub(r'e', 'np.e', expression)
 
     # Change '∞' to 'inf'
     expression = re.sub(r'∞', 'np.inf', expression)
 
-    # Change '\w np.' to '\w*np.'
+    # Change '\w np.' to '\w*sp.'
     expression = re.sub(r'(\w)(np)', r'\1*\2', expression)
-
 
     return expression
 
@@ -379,7 +541,7 @@ def convert_func_math(expression: str) -> str:
     # Change 'e^x' to 'sp.exp(x)'
     expression = re.sub(r'e\^(.*)', r'sp.exp(\1)', expression)
 
-    # Change '||' to 'sp.abs(x):
+    # Change '||' to 'sp.Abs(x):
     expression = re.sub(r'\|(.*)\|', r'sp.Abs(\1)', expression)
 
     # Change 'sqrt()' to sp.sqrt():
@@ -412,13 +574,16 @@ def convert_func_math(expression: str) -> str:
     # Change 'x' to '*x'
     expression = re.sub(r'(\d)(x)', r'\1*\2', expression)
 
+    # Change '1x' to '1*x'
+    expression = re.sub(r'(\w)(x)', r'\1*\2', expression)
+
     # Change '^' to '**'
     expression = expression.replace('^', '**')
 
     # Change ')(' to ')*('
     expression = expression.replace(')(', ')*(')
 
-    # Adding multiplication sing in 'x(' or ')x'
+    # Adding multiplication sign in 'x(' or ')x'
     expression = re.sub(r'([1-9x])(\()', r'\1*\2', expression)
     expression = re.sub(r'(\))([1-9x])', r'\1*\2', expression)
 
@@ -427,4 +592,11 @@ def convert_func_math(expression: str) -> str:
 
     # Change 'π' to 'sp.pi'
     expression = re.sub(r'\bπ\b', 'sp.pi', expression)
+
+    # Change 'e' to 'sp.e'
+    expression = re.sub(r'e', 'sp.E', expression)
+
+    # Change '\w np.' to '\w*sp.'
+    expression = re.sub(r'(\w)(sp)', r'\1*\2', expression)
+
     return expression
