@@ -1,4 +1,3 @@
-import sys
 from PyQt6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -6,7 +5,6 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QTextEdit,
     QLabel,
-    QApplication,
     QMessageBox
 )
 
@@ -18,8 +16,6 @@ from scipy import linalg
 
 from matrix_input_dialog import MatrixInputDialog
 
-
-# TODO Matrix none exception
 # TODO print result +-j, delete +
 
 class MatrixWindow(QWidget):
@@ -27,6 +23,7 @@ class MatrixWindow(QWidget):
     Class for window with matrix operators
     """
     # Class for matrix operations
+
     def __init__(self, menu_window):
         super().__init__()
         self.parent = menu_window
@@ -145,8 +142,8 @@ class MatrixWindow(QWidget):
         eigvect_button_MA = QPushButton('Eigenvectors A')
         eigvect_button_MA.clicked.connect(self.matrix_A_eigvect)
 
-        jordan_decomp_MA = QPushButton('Jordan A')
-        jordan_decomp_MA.clicked.connect(self.matrix_A_jordan)
+        copy_result_MA_button = QPushButton('Copy Result to A')
+        copy_result_MA_button.clicked.connect(self.copy_result_to_A)
 
         # Adding operator buttons for matrix A
         operators_layout_MA.addWidget(transpose_button_MA)
@@ -154,7 +151,7 @@ class MatrixWindow(QWidget):
         operators_layout_MA.addWidget(invert_button_MA)
         operators_layout_MA.addWidget(eigval_button_MA)
         operators_layout_MA.addWidget(eigvect_button_MA)
-        operators_layout_MA.addWidget(jordan_decomp_MA)
+        operators_layout_MA.addWidget(copy_result_MA_button)
 
         # Creating layout for operators for matrix B
         operators_layout_MB = QVBoxLayout()
@@ -175,8 +172,8 @@ class MatrixWindow(QWidget):
         eigvect_button_MB = QPushButton('Eigenvectors B')
         eigvect_button_MB.clicked.connect(self.matrix_B_eigvect)
 
-        jordan_decomp_MB = QPushButton('Jordan B')
-        jordan_decomp_MB.clicked.connect(self.matrix_B_jordan)
+        copy_result_MA_button = QPushButton('Copy Result to B')
+        copy_result_MA_button.clicked.connect(self.copy_result_to_B)
 
         # A dding operator buttons for matrix B
         operators_layout_MB.addWidget(transpose_button_MB)
@@ -184,7 +181,7 @@ class MatrixWindow(QWidget):
         operators_layout_MB.addWidget(invert_button_MB)
         operators_layout_MB.addWidget(eigval_button_MB)
         operators_layout_MB.addWidget(eigvect_button_MB)
-        operators_layout_MB.addWidget(jordan_decomp_MB)
+        operators_layout_MB.addWidget(copy_result_MA_button)
 
         # Creating layout for result matrix
         result_layout = QVBoxLayout()
@@ -269,14 +266,12 @@ class MatrixWindow(QWidget):
                 raise MatrixNoneError
             if self.matrix_A.shape != self.matrix_B.shape:
                 raise OperationError('Matrices must be same size')
-            
+
             self.matrix_R = self.matrix_A + self.matrix_B
             self.result_show('A + B')
-            
+
         except (OperationError, MatrixNoneError):
             return
-
-        
 
     def subtract_matrices(self) -> None:
         """
@@ -292,10 +287,10 @@ class MatrixWindow(QWidget):
         """
         try:
             if self.matrix_A is None or self.matrix_B is None:
-                 raise MatrixNoneError
+                raise MatrixNoneError
             if self.matrix_A.shape != self.matrix_B.shape:
                 raise OperationError('Matrices must be same size')
-            
+
             self.matrix_R = self.matrix_A - self.matrix_B
             self.result_show('A - B')
 
@@ -316,16 +311,15 @@ class MatrixWindow(QWidget):
         """
         try:
             if self.matrix_A is None or self.matrix_B is None:
-                 raise MatrixNoneError
+                raise MatrixNoneError
             if self.matrix_A.shape[1] != self.matrix_B.shape[0]:
                 raise OperationError('Shapes of matrices do not match')
-            
+
             self.matrix_R = self.matrix_A @ self.matrix_B
             self.result_show('A * B')
 
         except (OperationError, MatrixNoneError):
             return
-        
 
     def matrix_A_det(self) -> None:
         """
@@ -343,13 +337,12 @@ class MatrixWindow(QWidget):
             if self.matrix_A is None:
                 raise MatrixNoneError('A')
             if self.matrix_A.shape[0] != self.matrix_A.shape[1]:
-                raise OperationError('Matrix is not square')
+                raise OperationError('Matrix A is not square')
             self.matrix_R = linalg.det(self.matrix_A)
             self.result_show('Determinant A')
 
         except (OperationError, MatrixNoneError):
             return
-        
 
     def matrix_A_transpose(self) -> None:
         """
@@ -358,9 +351,6 @@ class MatrixWindow(QWidget):
         Raises
         ----------
         MatrixNoneError
-            If matrix A is None
-
-        OperationError
             If matrix A is None
         """
         try:
@@ -371,7 +361,6 @@ class MatrixWindow(QWidget):
 
         except MatrixNoneError:
             return
-        
 
     def matrix_A_invert(self) -> None:
         """
@@ -381,7 +370,7 @@ class MatrixWindow(QWidget):
         ----------
         MatrixNoneError
             If matrix A is None
-            
+
         OperationError
             If matrix A is not square or singular
         """
@@ -389,16 +378,15 @@ class MatrixWindow(QWidget):
             if self.matrix_A is None:
                 raise MatrixNoneError('A')
             if self.matrix_A.shape[0] != self.matrix_A.shape[1]:
-                raise OperationError('Matrix is not square')
+                raise OperationError('Matrix A is not square')
             if linalg.det(self.matrix_A) == 0:
-                raise OperationError('Matrix is singular')
-            
+                raise OperationError('Matrix A is singular')
+
             self.matrix_R = linalg.inv(self.matrix_A)
             self.result_show('Invert A')
 
         except (OperationError, MatrixNoneError):
             return
-       
 
     def matrix_A_eigvals(self) -> None:
         """
@@ -408,7 +396,7 @@ class MatrixWindow(QWidget):
         ----------
         MatrixNoneError
             If matrix A is None
-            
+
         OperationError
             If matrix A is not square
         """
@@ -416,14 +404,13 @@ class MatrixWindow(QWidget):
             if self.matrix_A is None:
                 raise MatrixNoneError('A')
             if self.matrix_A.shape[0] != self.matrix_A.shape[1]:
-                raise OperationError('Matrix is not square')
-            
+                raise OperationError('Matrix A is not square')
+
             self.matrix_R, _ = linalg.eig(self.matrix_A)
             self.result_show('Eigenvalues A')
-            
+
         except (OperationError, MatrixNoneError):
             return
-       
 
     def matrix_A_eigvect(self) -> None:
         """
@@ -433,7 +420,7 @@ class MatrixWindow(QWidget):
         ----------
         MatrixNoneError
             If matrix A is None
-            
+
         OperationError
             If matrix A is not square
         """
@@ -441,55 +428,160 @@ class MatrixWindow(QWidget):
             if self.matrix_A is None:
                 raise MatrixNoneError('A')
             if self.matrix_A.shape[0] != self.matrix_A.shape[1]:
-                raise OperationError('Matrix is not square')
-            
+                raise OperationError('Matrix A is not square')
+
             _, self.matrix_R = linalg.eig(self.matrix_A)
             self.result_show('Eigenvectors A')
-            
+
         except (OperationError, MatrixNoneError):
             return
-        
 
-    def matrix_A_jordan(self) -> None:
-        eigvals, eigvects = linalg.eig(self.matrix_A)
-        jordan = np.diag(eigvals)
-        p = eigvects
-        pinv = linalg.inv(eigvects)
-        self.matrix_R_text.setPlainText('Matrix A Jordan\n' + 'P' + '\n' + str(
-            p) + '\n' + 'J' + '\n' + str(jordan) + '\n' + 'P_inv' + '\n' + str(pinv))
+    def copy_result_to_A(self):
+        """
+        Method for copying result to matrix A
+        """
+        if self.matrix_R is None:
+            pass
+        elif not isinstance(self.matrix_R, np.ndarray):
+            pass
+        else:
+            self.matrix_A = self.matrix_R
+            self.matrix_R = None
+            self.matrix_A_text.setPlainText(str(self.matrix_A))
+
+            # Clearing result
+            self.matrix_R_text.setPlainText('')
 
     def matrix_B_det(self) -> None:
+        """
+        Method for calculating determinant of matrix B
+
+        Raises
+        ----------
+        MatrixNoneError
+            If matrix B is None
+
+        OperationError
+            If matrix B is not square
+        """
         try:
+            if self.matrix_B is None:
+                raise MatrixNoneError('B')
             if self.matrix_B.shape[0] != self.matrix_B.shape[1]:
-                raise OperationError('Matrix is not square')
-        except OperationError:
+                raise OperationError('Matrix B is not square')
+            self.matrix_R = linalg.det(self.matrix_B)
+            self.result_show('Determinant B')
+
+        except (OperationError, MatrixNoneError):
             return
-        self.matrix_R = linalg.det(self.matrix_B)
-        self.result_show('Determinant B')
 
     def matrix_B_transpose(self) -> None:
-        self.matrix_R = np.transpose(self.matrix_B)
-        self.result_show('Transpose B')
+        """
+        Method for transposing matrix B
+
+        Raises
+        ----------
+        MatrixNoneError
+            If matrix B is None
+        """
+        try:
+            if self.matrix_B is None:
+                raise MatrixNoneError('B')
+            self.matrix_R = np.transpose(self.matrix_B)
+            self.result_show('Transpose B')
+
+        except MatrixNoneError:
+            return
 
     def matrix_B_invert(self) -> None:
-        self.matrix_R = linalg.inv(self.matrix_B)
-        self.result_show('Invert B')
+        """
+        Method for inverting matrix B
+
+        Raises
+        ----------
+        MatrixNoneError
+            If matrix B is None
+
+        OperationError
+            If matrix B is not square or singular
+        """
+        try:
+            if self.matrix_B is None:
+                raise MatrixNoneError('B')
+            if self.matrix_B.shape[0] != self.matrix_B.shape[1]:
+                raise OperationError('Matrix B is not square')
+            if linalg.det(self.matrix_B) == 0:
+                raise OperationError('Matrix B is singular')
+
+            self.matrix_R = linalg.inv(self.matrix_B)
+            self.result_show('Invert B')
+
+        except (OperationError, MatrixNoneError):
+            return
 
     def matrix_B_eigvals(self) -> None:
-        self.matrix_R, _ = linalg.eig(self.matrix_B)
-        self.result_show('Eigenvalues B')
+        """
+        Method for calculating eigenvalues of matrix B
+
+        Raises
+        ----------
+        MatrixNoneError
+            If matrix B is None
+
+        OperationError
+            If matrix B is not square
+        """
+        try:
+            if self.matrix_B is None:
+                raise MatrixNoneError('B')
+            if self.matrix_B.shape[0] != self.matrix_B.shape[1]:
+                raise OperationError('Matrix B is not square')
+
+            self.matrix_R, _ = linalg.eig(self.matrix_B)
+            self.result_show('Eigenvalues B')
+
+        except (OperationError, MatrixNoneError):
+            return
 
     def matrix_B_eigvect(self) -> None:
-        _, self.matrix_R = linalg.eig(self.matrix_B)
-        self.result_show('Eigenvectors B')
+        """
+        Method for calculating eigenvectors of matrix B
 
-    def matrix_B_jordan(self) -> None:
-        eigvals, eigvects = linalg.eig(self.matrix_B)
-        jordan = np.diag(eigvals)
-        p = eigvects
-        pinv = linalg.inv(eigvects)
-        self.matrix_R_text.setPlainText('Matrix B Jordan\n' + 'P' + '\n' + str(
-            p) + '\n' + 'J' + '\n' + str(jordan) + '\n' + 'P_inv' + '\n' + str(pinv))
+        Raises
+        ----------
+        MatrixNoneError
+            If matrix B is None
+
+        OperationError
+            If matrix B is not square
+        """
+        try:
+            if self.matrix_B is None:
+                raise MatrixNoneError('B')
+            if self.matrix_B.shape[0] != self.matrix_B.shape[1]:
+                raise OperationError('Matrix B is not square')
+
+            _, self.matrix_R = linalg.eig(self.matrix_B)
+            self.result_show('Eigenvectors B')
+
+        except (OperationError, MatrixNoneError):
+            return
+
+    def copy_result_to_B(self):
+        """
+        Method for copying result to matrix B
+        """
+        if self.matrix_R is None:
+            pass
+        elif not isinstance(self.matrix_R, np.ndarray):
+            pass
+        else:
+            self.matrix_B = self.matrix_R
+            self.matrix_R = None
+            self.matrix_B_text.setPlainText(str(self.matrix_B))
+
+            # Clearing result
+            self.matrix_R_text.setPlainText('')
 
     def result_show(self, message: str) -> None:
         """
@@ -503,7 +595,7 @@ class MatrixWindow(QWidget):
 
         m_str = np.array2string(self.matrix_R, formatter={'complexfloat': complex_to_string,
                                                           'float': complex_to_string})
-        
+
         self.matrix_R_text.setPlainText(message + '\n' + m_str)
 
     def back_to_menu(self) -> None:
@@ -556,7 +648,7 @@ class MatrixNoneError(Exception):
     Class for none matrix exception
     """
 
-    def __init__(self, flag: str='AB') -> None:
+    def __init__(self, flag: str = 'AB') -> None:
         super().__init__()
         message_box = QMessageBox()
         message_box.setWindowTitle("ERROR")
