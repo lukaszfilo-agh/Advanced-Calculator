@@ -250,8 +250,9 @@ class IntegralsWindow(QDialog):
             if res[0] in ["⌠", "I"]:
                 message_box = QMessageBox()
                 message_box.setWindowTitle("NOT ABLE TO SOLVE")
-                message_box.setText("There may be no solution in the elementary functions.")
+                message_box.setText("Not able to find primary funtion.")
                 message_box.exec()
+                print(res)
             else:
                 # Swap possible sympy names for mathematical ones:
                 # res = substitute_sympy_representation(res)
@@ -526,7 +527,7 @@ def convert_lim_math(expression: str) -> str:
     # Change '∞' to 'inf'
     expression = re.sub(r'∞', 'np.inf', expression)
 
-    # Change '\w np.' to '\w*np.'
+    # Change '\w np.' to '\w*sp.'
     expression = re.sub(r'(\w)(np)', r'\1*\2', expression)
 
     return expression
