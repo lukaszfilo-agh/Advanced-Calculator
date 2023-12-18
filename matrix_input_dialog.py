@@ -6,12 +6,15 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QGridLayout,
     QDialog,
-    QPushButton
+    QPushButton,
+    QMessageBox
 )
 
 from PyQt6.QtCore import Qt
 
 import numpy as np
+
+import re
 
 
 class MatrixInputDialog(QDialog):
@@ -83,6 +86,8 @@ class MatrixInputDialog(QDialog):
 
     def update_matrix(self):
         try:
+            if self.rows_input.text() == '' or self.cols_input.text() == '':
+                raise EmptyInputError
             rows = int(self.rows_input.text())
             cols = int(self.cols_input.text())
 
@@ -97,17 +102,20 @@ class MatrixInputDialog(QDialog):
                 row_labels = []
                 row_inputs = []
                 for j in range(cols):
-                    label = QLabel(f"[{i}][{j}]:")
+                    # label = QLabel(f"[{i}][{j}]:")
                     input_field = MatrixInputLineEdit()
                     # self.matrix_layout.addWidget(label, i, j * 2)
                     self.matrix_layout.addWidget(input_field, i, j * 2 + 1)
-                    row_labels.append(label)
+                    # row_labels.append(label)
                     row_inputs.append(input_field)
                 self.matrix_labels.append(row_labels)
                 self.matrix_inputs.append(row_inputs)
 
+        except EmptyInputError:
+            return
+
         except ValueError:
-            pass
+            print('value error')
 
     def read_matrix(self):
         for i, row_inputs in enumerate(self.matrix_inputs):
@@ -115,15 +123,40 @@ class MatrixInputDialog(QDialog):
             for j, input_field in enumerate(row_inputs):
                 value = input_field.text()
                 try:
-                    value = float(value)
-                except ValueError:
-                    value = None
+                    if value == '':
+                        raise EmptyInputError
+                    res = re.findall(r'i', value)
+                    if len(res) != 0:
+                        value = value.replace('i', 'j')
+                        value = complex(value)
+                    else:
+                        value = float(value)
+                except EmptyInputError:
+                    self.conv_matrix = None
+                    return
                 row_values.append(value)
             self.conv_matrix.append(row_values)
 
     def getInputs(self):
         self.read_matrix()
-        return np.array(self.conv_matrix)
+        if self.conv_matrix == None:
+            return None
+        else:
+            return np.array(self.conv_matrix)
+
+
+class EmptyInputError(Exception):
+    "Raised when data input is NULL"
+
+    def __init__(self) -> None:
+        super().__init__()
+        message_box = QMessageBox()
+        message_box.setWindowTitle("ERROR")
+        message_box.setText(f"Input cannot be empty.")
+        print("Input empty")
+        result = message_box.exec()
+        if result == QMessageBox.StandardButton.Ok:
+            print("Error closed")
 
 
 class RowColLineEdit(QLineEdit):
@@ -151,6 +184,7 @@ class MatrixInputLineEdit(QLineEdit):
                         Qt.Key.Key_Left,
                         Qt.Key.Key_Right,
                         Qt.Key.Key_I,
+                        Qt.Key.Key_Minus,
                         46  # '.'
                         ]
         print(event.key())

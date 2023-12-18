@@ -518,6 +518,7 @@ def convert_lim_math(expression: str) -> str:
     # Change 'e' to '*e'
     expression = re.sub(r'(\d)(e)', r'\1*\2', expression)
 
+
     # Change 'π' to 'np.pi'
     expression = re.sub(r'π', 'np.pi', expression)
 
