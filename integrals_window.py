@@ -284,7 +284,7 @@ class IntegralsWindow(QDialog):
             message_box = QMessageBox()
             message_box.setWindowTitle("ERROR")
             message_box.setText(
-                f"ERROR \n f(x) = {re.sub('sp.','', func)} \n")
+                f"ERROR \n f(x) = {re.sub('sp.','', func)} \n {func}")
             message_box.exec()
             print(print(e))
 
@@ -550,11 +550,11 @@ def convert_func_math(expression: str) -> str:
     # Change '||' to 'sp.Abs(x):
     expression = re.sub(r'\|(.*)\|', r'sp.Abs(\1)', expression)
 
-    # Change 2l to 2*l
+    # Change 2l to 2*l:
     expression = re.sub(r'(\d)(\w)', r'\1*\2', expression)
 
-    # Change 21 to 2*1:
-    expression = re.sub(r'(\d)(\w)', r'\1*\2', expression)
+    # Change xl to x*l
+    expression = re.sub(r'(x)(\w)', r'\1*\2', expression)
 
     # Change 'sqrt()' to sp.sqrt():
     expression = re.sub(r'\bsqrt\b', 'sp.sqrt', expression)
@@ -586,7 +586,7 @@ def convert_func_math(expression: str) -> str:
     # Change 'x' to '*x'
     expression = re.sub(r'(\d)(x)', r'\1*\2', expression)
 
-    # Change '1x' to '1*x'
+    # Change 'lx' to 'l*x'
     expression = re.sub(r'(\w)(x)', r'\1*\2', expression)
 
     # Change '^' to '**'
