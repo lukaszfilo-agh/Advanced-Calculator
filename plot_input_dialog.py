@@ -1,5 +1,6 @@
 import re
 import numpy as np
+import matplotlib
 from typing import Optional, Tuple, List
 from PyQt6.QtWidgets import (
     QPushButton,
@@ -11,8 +12,20 @@ from PyQt6.QtWidgets import (
     QMessageBox
 )
 from PyQt6.QtCore import Qt, QEvent
-import matplotlib
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_qtagg import (
+    FigureCanvasQTAgg as FigureCanvas
+)
+
 matplotlib.use('QtAgg')
+
+
+class MplCanvas(FigureCanvas):
+    # Class for widged plot display
+    def __init__(self, parent=None, width=11, height=4, dpi=100) -> None:
+        fig = Figure(figsize=(width, height), dpi=dpi)
+        self.axes = fig.add_subplot(111)
+        super(MplCanvas, self).__init__(fig)
 
 
 class PlotInputDialog(QDialog):
@@ -26,7 +39,7 @@ class PlotInputDialog(QDialog):
         # Setting window title
         self.setWindowTitle('Enter Data')
         # Setting window size
-        self.resize(500, 500)
+        self.resize(500, 800)
 
         # Creating main layout
         main_layout = QVBoxLayout()
@@ -38,6 +51,8 @@ class PlotInputDialog(QDialog):
             CustomLineEdit()   # Upper limit input
         ]
 
+        self.input_fields[0].textChanged.connect(self.update_func)
+
         # Input fields labels
         labels_text = ['f(x):', 'Lower limit:', 'Upper limit:']
 
@@ -45,14 +60,26 @@ class PlotInputDialog(QDialog):
         self.input_fields[1].installEventFilter(self)
         self.input_fields[2].installEventFilter(self)
 
-        self.input_fields[0].mousePressEvent = lambda e: self.__switch_func_keyboard()
-        self.input_fields[1].mousePressEvent = lambda e: self.__switch_lower_lim_keyboard()
-        self.input_fields[2].mousePressEvent = lambda e: self.__switch_upper_lim_keyboard()
+        self.input_fields[0].mousePressEvent = lambda e: self.__switch_func_keyboard(
+        )
+        self.input_fields[1].mousePressEvent = lambda e: self.__switch_lower_lim_keyboard(
+        )
+        self.input_fields[2].mousePressEvent = lambda e: self.__switch_upper_lim_keyboard(
+        )
 
         for i in range(len(self.input_fields)):
             label = QLabel(labels_text[i])
             main_layout.addWidget(label)
             main_layout.addWidget(self.input_fields[i])
+
+        self.func_canvas = MplCanvas(self, width=4, height=2, dpi=100)
+        self.func_canvas.axes.clear()
+        self.func_canvas.axes.text(0.2, 0.6, '', fontsize=50)
+
+        self.func_canvas.axes.get_xaxis().set_visible(False)
+        self.func_canvas.axes.get_yaxis().set_visible(False)
+        self.func_canvas.draw()
+        main_layout.addWidget(self.func_canvas)
 
         # Layout for keyboard buttons
         self.buttons_layout = QVBoxLayout()
@@ -159,24 +186,25 @@ class PlotInputDialog(QDialog):
             self.buttons_layout.addLayout(row_layout)
 
     def get_inputs(self) -> Tuple[Optional[str], Optional[str], Optional[float], Optional[float]]:
-        function_str, lim1, lim2 = tuple(input.text() for input in self.input_fields)
+        function_str, lim1, lim2 = tuple(
+            input.text() for input in self.input_fields)
 
         try:
             if len(function_str) == 0 or len(lim1) == 0 or len(lim2) == 0:
-                    raise EmptyInputError
-        
+                raise EmptyInputError
+
             # Checking for illegal charaters in function str
             invalid_chars = func_bad_chars(function_str)
             if len(invalid_chars) != 0:
                 raise InvalidCharacters(function_str)
-            
+
             # Checking for illegal charaters in lim str
             lim1_invalid_chars = lim_bad_chars(lim1)
             lim2_invalid_chars = lim_bad_chars(lim2)
 
             if len(lim1_invalid_chars) != 0 or len(lim2_invalid_chars) != 0:
                 raise LimError(lim1, lim2, 0)
-            
+
             lim1 = convert_lim_math(lim1)
             lim2 = convert_lim_math(lim2)
 
@@ -187,18 +215,18 @@ class PlotInputDialog(QDialog):
             # Checking for limit error
             if lim1 > lim2:
                 raise LimError(lim1, lim2, 1)
-            
+
             # Creating expression for eval
             function_math = convert_func_math(function_str)
 
         # Catching errors for empty data
         except EmptyInputError:
             return None, None, None, None
-        
+
         # Catching errors for invalid chars
         except InvalidCharacters:
             return None, None, None, None
-        
+
         # Catching errors for LimErrors
         except LimError:
             return None, None, None, None
@@ -212,8 +240,19 @@ class PlotInputDialog(QDialog):
             if result == QMessageBox.StandardButton.Ok:
                 print("Error closed")
             return None, None, None, None
-        
+
         return function_math, function_str, lim1, lim2
+
+    def update_func(self):
+        tmptext = self.input_fields[0].text()
+        tmptext = "$"+tmptext+"$"
+
+        self.func_canvas.axes.clear()
+        self.func_canvas.axes.text(0.2, 0.6, tmptext, fontsize=20)
+
+        self.func_canvas.axes.get_xaxis().set_visible(False)
+        self.func_canvas.axes.get_yaxis().set_visible(False)
+        self.func_canvas.draw()
 
 
 # Class for custom line edit with keyboard filtering
