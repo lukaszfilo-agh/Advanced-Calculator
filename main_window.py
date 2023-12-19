@@ -1144,32 +1144,32 @@ class CalcMainWindow(QMainWindow):
                 self.__operations_field.setText(self.__str_val_operations)
 
     # Functions to manage toolbar buttons - opening proper windows:
-    def __draw_plot_window(self):
+    def __draw_plot_window(self) -> None:
         self.plot_window = PlotWindow(self)
         self.plot_window.show()
         self.hide()
         print('Plotter opened')
 
-    def __draw_matrix_window(self):
+    def __draw_matrix_window(self) -> None:
         self.matrix_window = MatrixWindow(self)
         self.matrix_window.show()
         self.hide()
         print('Matrix opened')
 
-    def __draw_integrals_window(self):
+    def __draw_integrals_window(self) -> None:
         self.integrals_window = IntegralsWindow(self)
         self.integrals_window.show()
         self.hide()
         print('Integrals opened')
 
-    def __sample_button_click(self, s):
+    def __sample_button_click(self, s) -> None:
         print('button clicked')
 
-    def quit_app(self):
+    def quit_app(self) -> None:
         QApplication.instance().quit
 
     # Method for centering windows
-    def __center(self):
+    def __center(self) -> None:
         qr = self.frameGeometry()
         cp = self.screen().availableGeometry().center()
 
