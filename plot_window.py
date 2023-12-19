@@ -1,3 +1,6 @@
+import numpy as np
+import re
+import matplotlib
 from plot_help_window import PlotHelpWindow
 from plot_input_dialog import PlotInputDialog
 from PyQt6.QtWidgets import (
@@ -7,16 +10,12 @@ from PyQt6.QtWidgets import (
     QWidget,
     QMessageBox
 )
-import numpy as np
+
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qtagg import (
     FigureCanvasQTAgg as FigureCanvas,
     NavigationToolbar2QT as NavigationToolbar
 )
-
-import re
-
-import matplotlib
 matplotlib.use('QtAgg')
 
 
@@ -34,7 +33,7 @@ matplotlib.use('QtAgg')
 
 class MplCanvas(FigureCanvas):
     # Class for widged plot display
-    def __init__(self, parent=None, width=11, height=4, dpi=100):
+    def __init__(self, parent=None, width=11, height=4, dpi=100) -> None:
         fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = fig.add_subplot(111)
         super(MplCanvas, self).__init__(fig)
@@ -42,7 +41,7 @@ class MplCanvas(FigureCanvas):
 
 class PlotWindow(QWidget):
     # Class for window with plots
-    def __init__(self, menu_window):
+    def __init__(self, menu_window) -> None:
         super().__init__()
         # Setting parent window
         self.parent = menu_window
@@ -53,7 +52,7 @@ class PlotWindow(QWidget):
         # Rezisizing window
         self.resize(600, 600)
         # Centering window
-        self.center()
+        self.__center()
 
         # Create canvas for plot
         self.canvas = MplCanvas(self, width=5, height=4, dpi=100)
@@ -64,19 +63,19 @@ class PlotWindow(QWidget):
 
         # Create button for inserting data
         data_button = QPushButton("Insert fuction")
-        data_button.clicked.connect(self.draw_plot)
+        data_button.clicked.connect(self.__draw_plot)
 
         # Create button for clearing plot
         clear_button = QPushButton("Clear plot")
-        clear_button.clicked.connect(self.clear_plot)
+        clear_button.clicked.connect(self.__clear_plot)
 
         # Create button for showing help
         help_button = QPushButton("Help")
-        help_button.clicked.connect(self.show_help)
+        help_button.clicked.connect(self.__show_help)
 
         # Create button for going back to menu
         back_button = QPushButton("Back to Main Window")
-        back_button.clicked.connect(self.back_to_menu)
+        back_button.clicked.connect(self.__back_to_menu)
 
         # Creating main layout
         main_layout = QVBoxLayout()
@@ -101,26 +100,26 @@ class PlotWindow(QWidget):
         self.setLayout(main_layout)
 
     # Function for going back to main menu
-    def back_to_menu(self):
+    def __back_to_menu(self) -> None:
         self.close()
         self.parent.show()
 
     # Function for clearing plot window
-    def clear_plot(self):
+    def __clear_plot(self) -> None:
         self.canvas.axes.cla()
         self.canvas.axes.grid(True)
         self.canvas.draw()
 
     # Function for drawing plots
-    def draw_plot(self):
+    def __draw_plot(self) -> None:
         # Creating dialog for data input
         dialog_data = PlotInputDialog()
 
         # Getting data from input
         dialog_data.exec()
-        function_math, function_str, lim1, lim2 = dialog_data.getInputs()
+        function_math, function_str, lim1, lim2 = dialog_data.get_inputs()
 
-        if function_math == None:
+        if function_math is None:
             return
 
         try:
@@ -132,7 +131,6 @@ class PlotWindow(QWidget):
 
             # Calculating values for function
             yvals = fx(xvals)
-
 
             # Checking for infs in yvals
             if np.isinf(yvals).any():
@@ -162,7 +160,7 @@ class PlotWindow(QWidget):
         # Setting title
         self.canvas.axes.set_title(f'$f(x) = {function_str}$')
         # Adding bolded x and y axis
-        if lim2 > 0 and lim1 < 0:
+        if lim2 > 0 > lim1:
             self.canvas.axes.axhline(0, color='black', linewidth=1)
             self.canvas.axes.axvline(0, color='black', linewidth=1)
 
@@ -176,14 +174,14 @@ class PlotWindow(QWidget):
         self.canvas.draw()
 
     # Method for centering windows
-    def center(self):
+    def __center(self) -> None:
         qr = self.frameGeometry()
         cp = self.screen().availableGeometry().center()
 
         qr.moveCenter(cp)
         self.move(qr.topLeft())
 
-    def show_help(self):
+    def __show_help(self) -> None:
         self.help_window.show()
 
 

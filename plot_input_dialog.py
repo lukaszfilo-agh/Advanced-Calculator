@@ -1,3 +1,6 @@
+import re
+import numpy as np
+from typing import Optional, Tuple, List
 from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
@@ -7,24 +10,19 @@ from PyQt6.QtWidgets import (
     QLineEdit,
     QMessageBox
 )
-
 from PyQt6.QtCore import Qt, QEvent
-
 import matplotlib
 matplotlib.use('QtAgg')
 
-import re
-
-import numpy as np
 
 class PlotInputDialog(QDialog):
     # Class for input dialog
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         # Calling function to initialize UI
         self.init_ui()
 
-    def init_ui(self):
+    def init_ui(self) -> None:
         # Setting window title
         self.setWindowTitle('Enter Data')
         # Setting window size
@@ -47,9 +45,9 @@ class PlotInputDialog(QDialog):
         self.input_fields[1].installEventFilter(self)
         self.input_fields[2].installEventFilter(self)
 
-        self.input_fields[0].mousePressEvent = lambda e: self.switch_func_keyboard()
-        self.input_fields[1].mousePressEvent = lambda e: self.switch_lower_lim_keyboard()
-        self.input_fields[2].mousePressEvent = lambda e: self.switch_upper_lim_keyboard()
+        self.input_fields[0].mousePressEvent = lambda e: self.__switch_func_keyboard()
+        self.input_fields[1].mousePressEvent = lambda e: self.__switch_lower_lim_keyboard()
+        self.input_fields[2].mousePressEvent = lambda e: self.__switch_upper_lim_keyboard()
 
         for i in range(len(self.input_fields)):
             label = QLabel(labels_text[i])
@@ -99,7 +97,7 @@ class PlotInputDialog(QDialog):
         self.setLayout(main_layout)
 
         self.active_field = 0
-        self.update_keyboard()
+        self.__update_keyboard()
 
     def eventFilter(self, obj, event):
         if event.type() == QEvent.Type.KeyPress and obj in self.input_fields:
@@ -109,22 +107,22 @@ class PlotInputDialog(QDialog):
                     self.active_field = 0
                 else:
                     self.active_field = active_index + 1
-            self.update_keyboard()
+            self.__update_keyboard()
         return super().eventFilter(obj, event)
 
-    def switch_func_keyboard(self):
+    def __switch_func_keyboard(self) -> None:
         self.active_field = 0
-        self.update_keyboard()
+        self.__update_keyboard()
 
-    def switch_lower_lim_keyboard(self):
+    def __switch_lower_lim_keyboard(self) -> None:
         self.active_field = 1
-        self.update_keyboard()
+        self.__update_keyboard()
 
-    def switch_upper_lim_keyboard(self):
+    def __switch_upper_lim_keyboard(self) -> None:
         self.active_field = 2
-        self.update_keyboard()
+        self.__update_keyboard()
 
-    def on_button_clicked(self):
+    def __on_button_clicked(self) -> None:
         clicked_button = self.sender()
         text = clicked_button.text()
 
@@ -141,7 +139,7 @@ class PlotInputDialog(QDialog):
             new_text = current_text + text
             self.input_fields[self.active_field].setText(new_text)
 
-    def update_keyboard(self):
+    def __update_keyboard(self) -> None:
         # Deleting buttons
         for i in reversed(range(self.buttons_layout.count())):
             layout = self.buttons_layout.itemAt(i).layout()
@@ -156,11 +154,11 @@ class PlotInputDialog(QDialog):
             for button_text in row:
                 button = QPushButton(button_text)
                 button.setFixedSize(100, 40)
-                button.clicked.connect(self.on_button_clicked)
+                button.clicked.connect(self.__on_button_clicked)
                 row_layout.addWidget(button)
             self.buttons_layout.addLayout(row_layout)
 
-    def getInputs(self):
+    def get_inputs(self) -> Tuple[Optional[str], Optional[str], Optional[float], Optional[float]]:
         function_str, lim1, lim2 = tuple(input.text() for input in self.input_fields)
 
         try:
@@ -217,12 +215,13 @@ class PlotInputDialog(QDialog):
         
         return function_math, function_str, lim1, lim2
 
+
 # Class for custom line edit with keyboard filtering
 class CustomLineEdit(QLineEdit):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event) -> None:
         allowed_keys = [Qt.Key.Key_Backspace,
                         Qt.Key.Key_Left,
                         Qt.Key.Key_Right,
@@ -238,6 +237,7 @@ class CustomLineEdit(QLineEdit):
         print(event.key())
         if event.text().isdigit() or event.key() in allowed_keys:
             super().keyPressEvent(event)
+
 
 class EmptyInputError(Exception):
     "Raised when data input is NULL"
@@ -284,17 +284,18 @@ class LimError(Exception):
             print("Error closed")
 
 
-def func_bad_chars(expression):
+def func_bad_chars(expression) -> List[str]:
     result = re.findall(
         r'(?!(?:sin|arcsin|cos|arccos|tg|arctg|ctg|arctg|sqrt|log|e\^|\d+|[\(\)\+\-\*\/\^]|\dx|x|π))\b\S+\b', expression)
     return result
 
-def lim_bad_chars(expression):
+
+def lim_bad_chars(expression) -> List[str]:
     result = re.findall(r'[^0-9eπ\-]', expression)
     return result
 
 
-def convert_lim_math(expression):
+def convert_lim_math(expression) -> str:
     # Change 'π' to '*π'
     expression = re.sub(r'(\d)(π)', r'\1*\2', expression)
 
@@ -309,7 +310,8 @@ def convert_lim_math(expression):
 
     return expression
 
-def convert_func_math(expression):
+
+def convert_func_math(expression) -> str:
     # Change 'e^x' to 'np.exp(x)'
     expression = re.sub(r'e\^(.*)', r'np.exp(\1)', expression)
 
@@ -361,7 +363,7 @@ def convert_func_math(expression):
     # Change ')(' to ')*('
     expression = expression.replace(')(', ')*(')
 
-    # Adding multiplication sing in 'x(' or ')x'
+    # Adding multiplication sign in 'x(' or ')x'
     expression = re.sub(r'([1-9x])(\()', r'\1*\2', expression)
     expression = re.sub(r'(\))([1-9x])', r'\1*\2', expression)
 

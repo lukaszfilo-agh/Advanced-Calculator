@@ -5,16 +5,17 @@ from PyQt6.QtWidgets import (
     QLabel,
 )
 
+
 # Class for help window for plot
 class PlotHelpWindow(QWidget):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         # Setting name of window
         self.setWindowTitle("Help")
         # Rezisizing window
         self.resize(300, 300)
         # Centering window
-        self.center()
+        self.__center()
 
         # Setting text for help window
         help_text = QLabel("HELP HELP HELP")
@@ -33,8 +34,8 @@ class PlotHelpWindow(QWidget):
         # Setting layout for window
         self.setLayout(main_layout)
 
-        # Method for centering windows
-    def center(self):
+    # Method for centering windows
+    def __center(self) -> None:
         qr = self.frameGeometry()
         cp = self.screen().availableGeometry().center()
 

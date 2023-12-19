@@ -1,3 +1,7 @@
+import numpy as np
+from matrix_input_dialog import MatrixInputDialog
+from scipy import linalg
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -8,15 +12,8 @@ from PyQt6.QtWidgets import (
     QMessageBox
 )
 
-from PyQt6.QtCore import Qt
-
-import numpy as np
-
-from scipy import linalg
-
-from matrix_input_dialog import MatrixInputDialog
-
 # TODO print result +-j, delete +
+
 
 class MatrixWindow(QWidget):
     """
@@ -24,7 +21,7 @@ class MatrixWindow(QWidget):
     """
     # Class for matrix operations
 
-    def __init__(self, menu_window):
+    def __init__(self, menu_window) -> None:
         super().__init__()
         self.parent = menu_window
 
@@ -38,18 +35,18 @@ class MatrixWindow(QWidget):
         # Rezisizing window
         self.setFixedSize(600, 600)
         # Centering window
-        self.center()
+        self.__center()
 
         # Creating top layout for buttons
         data_buttons_layout = QHBoxLayout()
 
         # Button for inserting data matrix A
         matrix_A_button = QPushButton("Insert Matrix A")
-        matrix_A_button.clicked.connect(self.matrix_A_input)
+        matrix_A_button.clicked.connect(self.__matrix_A_input)
 
         # Button for inserting data matrix B
         matrix_B_button = QPushButton("Insert Matrix B")
-        matrix_B_button.clicked.connect(self.matrix_B_input)
+        matrix_B_button.clicked.connect(self.__matrix_B_input)
 
         # Adding buttons to top widget
         data_buttons_layout.addWidget(matrix_A_button)
@@ -96,13 +93,13 @@ class MatrixWindow(QWidget):
 
         # Adding buttons for operators between Two Matrices
         add_button = QPushButton('A + B')
-        add_button.clicked.connect(self.add_matrices)
+        add_button.clicked.connect(self.__add_matrices)
 
         subtract_button = QPushButton('A - B')
-        subtract_button.clicked.connect(self.subtract_matrices)
+        subtract_button.clicked.connect(self.__subtract_matrices)
 
         multiply_button = QPushButton('A * B')
-        multiply_button.clicked.connect(self.multipy_matrices)
+        multiply_button.clicked.connect(self.__multipy_matrices)
 
         # Adding operators to Layout
         operators_AB.addWidget(add_button)
@@ -128,22 +125,22 @@ class MatrixWindow(QWidget):
 
         # Creating buttons for operators matrix A
         transpose_button_MA = QPushButton('Transpose A')
-        transpose_button_MA.clicked.connect(self.matrix_A_transpose)
+        transpose_button_MA.clicked.connect(self.__matrix_A_transpose)
 
         det_button_MA = QPushButton('Determinant A')
-        det_button_MA.clicked.connect(self.matrix_A_det)
+        det_button_MA.clicked.connect(self.__matrix_A_det)
 
         invert_button_MA = QPushButton('Invert A')
-        invert_button_MA.clicked.connect(self.matrix_A_invert)
+        invert_button_MA.clicked.connect(self.__matrix_A_invert)
 
         eigval_button_MA = QPushButton('Eigenvalues A')
-        eigval_button_MA.clicked.connect(self.matrix_A_eigvals)
+        eigval_button_MA.clicked.connect(self.__matrix_A_eigvals)
 
         eigvect_button_MA = QPushButton('Eigenvectors A')
-        eigvect_button_MA.clicked.connect(self.matrix_A_eigvect)
+        eigvect_button_MA.clicked.connect(self.__matrix_A_eigvect)
 
         copy_result_MA_button = QPushButton('Copy Result to A')
-        copy_result_MA_button.clicked.connect(self.copy_result_to_A)
+        copy_result_MA_button.clicked.connect(self.__copy_result_to_A)
 
         # Adding operator buttons for matrix A
         operators_layout_MA.addWidget(transpose_button_MA)
@@ -158,22 +155,22 @@ class MatrixWindow(QWidget):
 
         # Creating buttons for operators matrix B
         transpose_button_MB = QPushButton('Transpose B')
-        transpose_button_MB.clicked.connect(self.matrix_B_transpose)
+        transpose_button_MB.clicked.connect(self.__matrix_B_transpose)
 
         det_button_MB = QPushButton('Determinant B')
-        det_button_MB.clicked.connect(self.matrix_B_det)
+        det_button_MB.clicked.connect(self.__matrix_B_det)
 
         invert_button_MB = QPushButton('Invert B')
-        invert_button_MB.clicked.connect(self.matrix_B_invert)
+        invert_button_MB.clicked.connect(self.__matrix_B_invert)
 
         eigval_button_MB = QPushButton('Eigenvalues B')
-        eigval_button_MB.clicked.connect(self.matrix_B_eigvals)
+        eigval_button_MB.clicked.connect(self.__matrix_B_eigvals)
 
         eigvect_button_MB = QPushButton('Eigenvectors B')
-        eigvect_button_MB.clicked.connect(self.matrix_B_eigvect)
+        eigvect_button_MB.clicked.connect(self.__matrix_B_eigvect)
 
         copy_result_MA_button = QPushButton('Copy Result to B')
-        copy_result_MA_button.clicked.connect(self.copy_result_to_B)
+        copy_result_MA_button.clicked.connect(self.__copy_result_to_B)
 
         # A dding operator buttons for matrix B
         operators_layout_MB.addWidget(transpose_button_MB)
@@ -202,7 +199,7 @@ class MatrixWindow(QWidget):
 
         # Create button for going back to menu
         back_button = QPushButton("Back to Main Window")
-        back_button.clicked.connect(self.back_to_menu)
+        back_button.clicked.connect(self.__back_to_menu)
 
         # Adding back button to main layout
         main_layout.addWidget(back_button)
@@ -210,7 +207,7 @@ class MatrixWindow(QWidget):
         # Setting main layout of window
         self.setLayout(main_layout)
 
-    def matrix_A_input(self) -> None:
+    def __matrix_A_input(self) -> None:
         """
         Method for inserting data to matrix A
         """
@@ -229,7 +226,7 @@ class MatrixWindow(QWidget):
         # Clearing result
         self.matrix_R_text.setPlainText('')
 
-    def matrix_B_input(self) -> None:
+    def __matrix_B_input(self) -> None:
         """
         Method for inserting data to matrix B
         """
@@ -249,7 +246,7 @@ class MatrixWindow(QWidget):
         # Clearing result
         self.matrix_R_text.setPlainText('')
 
-    def add_matrices(self) -> None:
+    def __add_matrices(self) -> None:
         """
         Method for adding matrices A and B
 
@@ -268,12 +265,12 @@ class MatrixWindow(QWidget):
                 raise OperationError('Matrices must be same size')
 
             self.matrix_R = self.matrix_A + self.matrix_B
-            self.result_show('A + B')
+            self.__result_show('A + B')
 
         except (OperationError, MatrixNoneError):
             return
 
-    def subtract_matrices(self) -> None:
+    def __subtract_matrices(self) -> None:
         """
         Method for adding matrices A and B
 
@@ -292,12 +289,12 @@ class MatrixWindow(QWidget):
                 raise OperationError('Matrices must be same size')
 
             self.matrix_R = self.matrix_A - self.matrix_B
-            self.result_show('A - B')
+            self.__result_show('A - B')
 
         except (OperationError, MatrixNoneError):
             return
 
-    def multipy_matrices(self) -> None:
+    def __multipy_matrices(self) -> None:
         """
         Method for multiplying matrices A and B
 
@@ -316,12 +313,12 @@ class MatrixWindow(QWidget):
                 raise OperationError('Shapes of matrices do not match')
 
             self.matrix_R = self.matrix_A @ self.matrix_B
-            self.result_show('A * B')
+            self.__result_show('A * B')
 
         except (OperationError, MatrixNoneError):
             return
 
-    def matrix_A_det(self) -> None:
+    def __matrix_A_det(self) -> None:
         """
         Method for calculating determinant of matrix A
 
@@ -339,12 +336,12 @@ class MatrixWindow(QWidget):
             if self.matrix_A.shape[0] != self.matrix_A.shape[1]:
                 raise OperationError('Matrix A is not square')
             self.matrix_R = linalg.det(self.matrix_A)
-            self.result_show('Determinant A')
+            self.__result_show('Determinant A')
 
         except (OperationError, MatrixNoneError):
             return
 
-    def matrix_A_transpose(self) -> None:
+    def __matrix_A_transpose(self) -> None:
         """
         Method for transposing matrix A
 
@@ -357,12 +354,12 @@ class MatrixWindow(QWidget):
             if self.matrix_A is None:
                 raise MatrixNoneError('A')
             self.matrix_R = np.transpose(self.matrix_A)
-            self.result_show('Transpose A')
+            self.__result_show('Transpose A')
 
         except MatrixNoneError:
             return
 
-    def matrix_A_invert(self) -> None:
+    def __matrix_A_invert(self) -> None:
         """
         Method for inverting matrix A
 
@@ -383,12 +380,12 @@ class MatrixWindow(QWidget):
                 raise OperationError('Matrix A is singular')
 
             self.matrix_R = linalg.inv(self.matrix_A)
-            self.result_show('Invert A')
+            self.__result_show('Invert A')
 
         except (OperationError, MatrixNoneError):
             return
 
-    def matrix_A_eigvals(self) -> None:
+    def __matrix_A_eigvals(self) -> None:
         """
         Method for calculating eigenvalues of matrix A
 
@@ -407,12 +404,12 @@ class MatrixWindow(QWidget):
                 raise OperationError('Matrix A is not square')
 
             self.matrix_R, _ = linalg.eig(self.matrix_A)
-            self.result_show('Eigenvalues A')
+            self.__result_show('Eigenvalues A')
 
         except (OperationError, MatrixNoneError):
             return
 
-    def matrix_A_eigvect(self) -> None:
+    def __matrix_A_eigvect(self) -> None:
         """
         Method for calculating eigenvectors of matrix A
 
@@ -431,12 +428,12 @@ class MatrixWindow(QWidget):
                 raise OperationError('Matrix A is not square')
 
             _, self.matrix_R = linalg.eig(self.matrix_A)
-            self.result_show('Eigenvectors A')
+            self.__result_show('Eigenvectors A')
 
         except (OperationError, MatrixNoneError):
             return
 
-    def copy_result_to_A(self):
+    def __copy_result_to_A(self) -> None:
         """
         Method for copying result to matrix A
         """
@@ -452,7 +449,7 @@ class MatrixWindow(QWidget):
             # Clearing result
             self.matrix_R_text.setPlainText('')
 
-    def matrix_B_det(self) -> None:
+    def __matrix_B_det(self) -> None:
         """
         Method for calculating determinant of matrix B
 
@@ -470,12 +467,12 @@ class MatrixWindow(QWidget):
             if self.matrix_B.shape[0] != self.matrix_B.shape[1]:
                 raise OperationError('Matrix B is not square')
             self.matrix_R = linalg.det(self.matrix_B)
-            self.result_show('Determinant B')
+            self.__result_show('Determinant B')
 
         except (OperationError, MatrixNoneError):
             return
 
-    def matrix_B_transpose(self) -> None:
+    def __matrix_B_transpose(self) -> None:
         """
         Method for transposing matrix B
 
@@ -488,12 +485,12 @@ class MatrixWindow(QWidget):
             if self.matrix_B is None:
                 raise MatrixNoneError('B')
             self.matrix_R = np.transpose(self.matrix_B)
-            self.result_show('Transpose B')
+            self.__result_show('Transpose B')
 
         except MatrixNoneError:
             return
 
-    def matrix_B_invert(self) -> None:
+    def __matrix_B_invert(self) -> None:
         """
         Method for inverting matrix B
 
@@ -514,12 +511,12 @@ class MatrixWindow(QWidget):
                 raise OperationError('Matrix B is singular')
 
             self.matrix_R = linalg.inv(self.matrix_B)
-            self.result_show('Invert B')
+            self.__result_show('Invert B')
 
         except (OperationError, MatrixNoneError):
             return
 
-    def matrix_B_eigvals(self) -> None:
+    def __matrix_B_eigvals(self) -> None:
         """
         Method for calculating eigenvalues of matrix B
 
@@ -538,12 +535,12 @@ class MatrixWindow(QWidget):
                 raise OperationError('Matrix B is not square')
 
             self.matrix_R, _ = linalg.eig(self.matrix_B)
-            self.result_show('Eigenvalues B')
+            self.__result_show('Eigenvalues B')
 
         except (OperationError, MatrixNoneError):
             return
 
-    def matrix_B_eigvect(self) -> None:
+    def __matrix_B_eigvect(self) -> None:
         """
         Method for calculating eigenvectors of matrix B
 
@@ -562,12 +559,12 @@ class MatrixWindow(QWidget):
                 raise OperationError('Matrix B is not square')
 
             _, self.matrix_R = linalg.eig(self.matrix_B)
-            self.result_show('Eigenvectors B')
+            self.__result_show('Eigenvectors B')
 
         except (OperationError, MatrixNoneError):
             return
 
-    def copy_result_to_B(self):
+    def __copy_result_to_B(self):
         """
         Method for copying result to matrix B
         """
@@ -583,7 +580,7 @@ class MatrixWindow(QWidget):
             # Clearing result
             self.matrix_R_text.setPlainText('')
 
-    def result_show(self, message: str) -> None:
+    def __result_show(self, message: str) -> None:
         """
         Method for updating result view
 
@@ -598,14 +595,14 @@ class MatrixWindow(QWidget):
 
         self.matrix_R_text.setPlainText(message + '\n' + m_str)
 
-    def back_to_menu(self) -> None:
+    def __back_to_menu(self) -> None:
         """
         Method for going back to main menu
         """
         self.close()
         self.parent.show()
 
-    def center(self) -> None:
+    def __center(self) -> None:
         """
         Method for centering windows
         """
@@ -616,7 +613,7 @@ class MatrixWindow(QWidget):
         self.move(qr.topLeft())
 
 
-def complex_to_string(c):
+def complex_to_string(c) -> str:
     if c.imag == 0 and c.real != 0:
         return '{0.real:.4f}'.format(c)
     elif c.real == 0 and c.imag != 0:

@@ -1,14 +1,13 @@
+import sympy as sp
+import numpy as np
+import re
+import warnings
 from typing import Union, List
 from scipy.integrate import quad, IntegrationWarning
 from sympy.calculus.singularities import singularities
 from sympy.calculus.util import continuous_domain
 from sympy import Interval
-import sympy as sp
-import numpy as np
-import warnings
-warnings.filterwarnings("error")
-
-
+from PyQt6.QtCore import Qt, QEvent
 from PyQt6.QtWidgets import (
     QPushButton,
     QVBoxLayout,
@@ -19,9 +18,7 @@ from PyQt6.QtWidgets import (
     QMessageBox
 )
 
-from PyQt6.QtCore import Qt, QEvent
-
-import re
+warnings.filterwarnings("error")
 
 
 class IntegralsWindow(QDialog):
@@ -182,16 +179,28 @@ class IntegralsWindow(QDialog):
         self.close()
         self.parent.show()
 
-    # Getting inputs:
-    def __calc(self):
+    # Getting inputs to calculate:
+    def __calc(self) -> None:
         function_str, lim1, lim2 = tuple(input.text() for input in self.input_fields)
 
         try:
             if len(function_str) == 0:
                 raise EmptyInputError
 
+            # Checking for illegal charaters in function str
+            invalid_chars = func_bad_chars(function_str)
+            if len(invalid_chars) != 0:
+                raise InvalidCharacters(function_str)
+
             # Creating expression for eval:
             function_math = convert_func_math(function_str)
+
+            # Checking for illegal charaters in lim str
+            lim1_invalid_chars = lim_bad_chars(lim1)
+            lim2_invalid_chars = lim_bad_chars(lim2)
+
+            if len(lim1_invalid_chars) != 0 or len(lim2_invalid_chars) != 0:
+                raise LimError(lim1, lim2, 0)
 
             # If both lim are empty then we move to indefinite integrals:
             if lim1 == "" and lim2 == "":
@@ -518,7 +527,6 @@ def convert_lim_math(expression: str) -> str:
     # Change 'e' to '*e'
     expression = re.sub(r'(\d)(e)', r'\1*\2', expression)
 
-
     # Change 'π' to 'np.pi'
     expression = re.sub(r'π', 'np.pi', expression)
 
@@ -535,14 +543,18 @@ def convert_lim_math(expression: str) -> str:
 
 
 def convert_func_math(expression: str) -> str:
-    # Change 21 to 2*1:
-    expression = re.sub(r'(\d)(\w)', r'\1*\2', expression)
 
     # Change 'e^x' to 'sp.exp(x)'
     expression = re.sub(r'e\^(.*)', r'sp.exp(\1)', expression)
 
     # Change '||' to 'sp.Abs(x):
     expression = re.sub(r'\|(.*)\|', r'sp.Abs(\1)', expression)
+
+    # Change 2l to 2*l
+    expression = re.sub(r'(\d)(\w)', r'\1*\2', expression)
+
+    # Change 21 to 2*1:
+    expression = re.sub(r'(\d)(\w)', r'\1*\2', expression)
 
     # Change 'sqrt()' to sp.sqrt():
     expression = re.sub(r'\bsqrt\b', 'sp.sqrt', expression)
@@ -587,16 +599,19 @@ def convert_func_math(expression: str) -> str:
     expression = re.sub(r'([1-9x])(\()', r'\1*\2', expression)
     expression = re.sub(r'(\))([1-9x])', r'\1*\2', expression)
 
+    # Change 'π' to 'sp.pi'
+    expression = re.sub(r'π', 'sp.pi', expression)
+
+    # Change 'e' to 'sp.E'
+    expression = re.sub(r'e', 'sp.E', expression)
+
     # Change '\d sp.' to '\d*sp.'
     expression = re.sub(r'(\d)(sp)', r'\1*\2', expression)
 
-    # Change 'π' to 'sp.pi'
-    expression = re.sub(r'\bπ\b', 'sp.pi', expression)
-
-    # Change 'e' to 'sp.e'
-    expression = re.sub(r'e', 'sp.E', expression)
-
     # Change '\w np.' to '\w*sp.'
     expression = re.sub(r'(\w)(sp)', r'\1*\2', expression)
+
+    # Change 'xsp' to 'x * sp'
+    expression = re.sub(r'(x)(sp)', r'\1*\2', expression)
 
     return expression

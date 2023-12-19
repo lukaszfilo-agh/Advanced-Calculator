@@ -1,4 +1,5 @@
-
+import numpy as np
+import re
 from PyQt6.QtWidgets import (
     QVBoxLayout,
     QHBoxLayout,
@@ -9,22 +10,17 @@ from PyQt6.QtWidgets import (
     QPushButton,
     QMessageBox
 )
-
 from PyQt6.QtCore import Qt
-
-import numpy as np
-
-import re
 
 
 class MatrixInputDialog(QDialog):
     # Class for matrix input dialog
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         # Calling function to initialize UI
         self.init_ui()
 
-    def init_ui(self):
+    def init_ui(self) -> None:
         # Setting window title
         self.setWindowTitle('Enter Matrix')
         # Setting window size
@@ -45,7 +41,7 @@ class MatrixInputDialog(QDialog):
 
         # Create button for saving size of matrix
         next_button = QPushButton('Proceed')
-        next_button.clicked.connect(self.update_matrix)
+        next_button.clicked.connect(self.__update_matrix)
 
         # Create accept button
         done_button = QPushButton('Save')
@@ -84,7 +80,7 @@ class MatrixInputDialog(QDialog):
         # Setting layout for window
         self.setLayout(main_layout)
 
-    def update_matrix(self):
+    def __update_matrix(self) -> None:
         try:
             if self.rows_input.text() == '' or self.cols_input.text() == '':
                 raise EmptyInputError
@@ -117,7 +113,7 @@ class MatrixInputDialog(QDialog):
         except ValueError:
             print('value error')
 
-    def read_matrix(self):
+    def __read_matrix(self) -> None:
         for i, row_inputs in enumerate(self.matrix_inputs):
             row_values = []
             for j, input_field in enumerate(row_inputs):
@@ -138,8 +134,8 @@ class MatrixInputDialog(QDialog):
             self.conv_matrix.append(row_values)
 
     def getInputs(self):
-        self.read_matrix()
-        if self.conv_matrix == None:
+        self.__read_matrix()
+        if self.conv_matrix is None:
             return None
         else:
             return np.array(self.conv_matrix)
@@ -161,10 +157,10 @@ class EmptyInputError(Exception):
 
 class RowColLineEdit(QLineEdit):
     # Class for custom line edit with keyboard filtering for Rows and Cols
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
 
-    def keyPressEvent(self, event):
+    def keyPressEvent(self, event) -> None:
         allowed_keys = [Qt.Key.Key_Backspace,
                         Qt.Key.Key_Left,
                         Qt.Key.Key_Right
