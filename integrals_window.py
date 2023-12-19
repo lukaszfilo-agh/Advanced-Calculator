@@ -252,9 +252,6 @@ class IntegralsWindow(QDialog):
             # Getting result for display:
             res = str(sp.simplify(sp.integrate(func_math, x))) + " + C"
 
-            # Substituting representation so that functions match keyboard names:
-            res = substitute_sympy_representation(res)
-
             # No result in elementary function:
             if res[0] in ["⌠", "I"]:
                 message_box = QMessageBox()
@@ -263,8 +260,8 @@ class IntegralsWindow(QDialog):
                 message_box.exec()
                 print(res)
             else:
-                # Swap possible sympy names for mathematical ones:
-                # res = substitute_sympy_representation(res)
+                # Substituting representation so that functions match keyboard names:
+                res = substitute_sympy_representation(res)
                 message_box = QMessageBox()
                 message_box.setWindowTitle("SOLUTION")
                 message_box.setText(f"Primary function to your integral:\n\n{res}")
@@ -332,9 +329,20 @@ class IntegralsWindow(QDialog):
                         domain = continuous_domain(func_sympy, x, sp.Reals)
 
                         # If we have singularities or integral interval is not in function continuous domain:
-                        if sing or not domain.contains(Interval(0, lim)):
+                        if sing or not domain.intersect(Interval(0, lim2)) == Interval(0, lim2):
                             # Try using sympy.integrate:
-                            res = 2 * sign * sp.integrate(func_sympy, (x, 0, lim))
+                            res = str(2 * sign * sp.integrate(func_sympy, (x, 0, lim)))
+
+                            # No result found:
+                            if res[0] in ["⌠", "I"]:
+                                message_box = QMessageBox()
+                                message_box.setWindowTitle("NOT ABLE TO SOLVE")
+                                message_box.setText("Not able to find solution")
+                                message_box.exec()
+                                return
+                            else:
+                                # Substituting representation so that functions match keyboard names:
+                                res = substitute_sympy_representation(res)
                         # Else - use scipy:
                         else:
                             res, _ = quad(f, 0, lim2)
@@ -350,13 +358,24 @@ class IntegralsWindow(QDialog):
                         domain = continuous_domain(func_sympy, x, sp.Reals)
 
                         # Integral interval is in function continous domain - we may use scipy (no complex):
-                        if domain.contains(Interval(lim1, lim2)):
+                        if domain.intersect(Interval(lim1, lim2)) == Interval(lim1, lim2):
                             # Calculating numerically:
                             res, _ = quad(f, lim1, lim2)
 
                         # Use sympy to calculate result - complex solution:
                         else:
-                            res = sp.integrate(func_sympy, (x, lim1, lim2))
+                            res = str(sp.integrate(func_sympy, (x, lim1, lim2)))
+
+                            # No result found:
+                            if res[0] in ["⌠", "I"]:
+                                message_box = QMessageBox()
+                                message_box.setWindowTitle("NOT ABLE TO SOLVE")
+                                message_box.setText("Not able to find solution")
+                                message_box.exec()
+                                return
+                            else:
+                                # Substituting representation so that functions match keyboard names:
+                                res = substitute_sympy_representation(res)
                 else:
                     # Symbolic variable:
                     x = sp.symbols('x', real=True)
@@ -364,18 +383,34 @@ class IntegralsWindow(QDialog):
                     # Evaluating function using sympy:
                     func_sympy = eval(func)
 
+                    # Get function continuous domain:
                     domain = continuous_domain(func_sympy, x, sp.Reals)
 
                     # Integral interval is in function continous domain - we may use scipy (no complex):
-                    if domain.contains(Interval(lim1, lim2)):
+                    if domain.intersect(Interval(lim1, lim2)) == Interval(lim1, lim2):
                         # Calculating numerically:
                         res, _ = quad(f, lim1, lim2)
 
                     # Use sympy to calculate result - complex solution:
                     else:
-                        res = sp.integrate(func_sympy, (x, lim1, lim2))
-                        if res == sp.nan:
-                            raise IntegrationWarning
+                        res = str(sp.integrate(func_sympy, (x, lim1, lim2)))
+
+                        # No result found:
+                        if res[0] in ["⌠", "I"]:
+                            message_box = QMessageBox()
+                            message_box.setWindowTitle("NOT ABLE TO SOLVE")
+                            message_box.setText("Not able to find solution")
+                            message_box.exec()
+                            return
+                        else:
+                            # Substituting representation so that functions match keyboard names:
+                            res = substitute_sympy_representation(res)
+            if res == sp.nan:
+                message_box = QMessageBox()
+                message_box.setWindowTitle("NOT ABLE TO SOLVE")
+                message_box.setText("Not able to find solution")
+                message_box.exec()
+                return
             message_box = QMessageBox()
             message_box.setWindowTitle("SOLUTION")
             message_box.setText(f"Integral of your function:\n{res}")
@@ -426,10 +461,13 @@ class CustomLineEdit(QLineEdit):
                         Qt.Key.Key_Minus,
                         Qt.Key.Key_Plus,
                         Qt.Key.Key_Period,
+                        Qt.Key.Key_Asterisk,
+                        Qt.Key.Key_E,
                         47,  # '/'
                         94,  # '^'
                         40,  # '('
-                        41  # ')'
+                        41,  # ')'
+                        124  # '|'
                         ]
         print(event.key())
         if event.text().isdigit() or event.key() in allowed_keys:
@@ -495,8 +533,8 @@ def substitute_sympy_representation(sympy_repr: str) -> str:
             sympy_repr = regex.sub(sub_with_brackets, sympy_repr)
 
     # Creating variables for easier symbols substitutions:
-    symbols_to_sub = ["pi", "E"]
-    subs = ["π", "e"]
+    symbols_to_sub = ["pi", "E", "**"]
+    subs = ["π", "e", "^"]
     match_symbols_to_subs = {symbol: sub for symbol, sub in zip(symbols_to_sub, subs)}
     for symbol in symbols_to_sub:
         if symbol in sympy_repr:
