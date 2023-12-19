@@ -252,9 +252,6 @@ class IntegralsWindow(QDialog):
             # Getting result for display:
             res = str(sp.simplify(sp.integrate(func_math, x))) + " + C"
 
-            # Substituting representation so that functions match keyboard names:
-            res = substitute_sympy_representation(res)
-
             # No result in elementary function:
             if res[0] in ["⌠", "I"]:
                 message_box = QMessageBox()
@@ -263,8 +260,8 @@ class IntegralsWindow(QDialog):
                 message_box.exec()
                 print(res)
             else:
-                # Swap possible sympy names for mathematical ones:
-                # res = substitute_sympy_representation(res)
+                # Substituting representation so that functions match keyboard names:
+                res = substitute_sympy_representation(res)
                 message_box = QMessageBox()
                 message_box.setWindowTitle("SOLUTION")
                 message_box.setText(f"Primary function to your integral:\n\n{res}")
@@ -426,10 +423,13 @@ class CustomLineEdit(QLineEdit):
                         Qt.Key.Key_Minus,
                         Qt.Key.Key_Plus,
                         Qt.Key.Key_Period,
+                        Qt.Key.Key_Asterisk,
+                        Qt.Key.Key_E,
                         47,  # '/'
                         94,  # '^'
                         40,  # '('
-                        41  # ')'
+                        41,  # ')'
+                        124  # '|'
                         ]
         print(event.key())
         if event.text().isdigit() or event.key() in allowed_keys:
@@ -495,8 +495,8 @@ def substitute_sympy_representation(sympy_repr: str) -> str:
             sympy_repr = regex.sub(sub_with_brackets, sympy_repr)
 
     # Creating variables for easier symbols substitutions:
-    symbols_to_sub = ["pi", "E"]
-    subs = ["π", "e"]
+    symbols_to_sub = ["pi", "E", "**"]
+    subs = ["π", "e", "^"]
     match_symbols_to_subs = {symbol: sub for symbol, sub in zip(symbols_to_sub, subs)}
     for symbol in symbols_to_sub:
         if symbol in sympy_repr:

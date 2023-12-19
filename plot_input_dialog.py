@@ -229,10 +229,13 @@ class CustomLineEdit(QLineEdit):
                         Qt.Key.Key_Minus,
                         Qt.Key.Key_Plus,
                         Qt.Key.Key_Period,
+                        Qt.Key.Key_Asterisk,
+                        Qt.Key.Key_E,
                         47,  # '/'
                         94,  # '^'
                         40,  # '('
-                        41  # ')'
+                        41,  # ')'
+                        124  # '|'
                         ]
         print(event.key())
         if event.text().isdigit() or event.key() in allowed_keys:
