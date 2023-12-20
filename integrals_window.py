@@ -2,7 +2,8 @@ import sympy as sp
 import numpy as np
 import re
 import warnings
-from integ_help_window import IntegralsHelpWindow
+from integrals_help_window import IntegralsHelpWindow
+from integrals_result_window import IntegralsResultWindow
 from typing import Union, List
 from scipy.integrate import quad, IntegrationWarning
 from sympy.calculus.singularities import singularities
@@ -274,10 +275,9 @@ class IntegralsWindow(QDialog):
             else:
                 # Substituting representation so that functions match keyboard names:
                 res = substitute_sympy_representation(res)
-                message_box = QMessageBox()
-                message_box.setWindowTitle("SOLUTION")
-                message_box.setText(f"Primary function to your integral:\n\n{res}")
-                message_box.exec()
+                func = substitute_sympy_representation(func)
+                func = re.sub('sp.', '', func)
+                self.__results_window(f"∫ {func} dx = {res}")
         # Catch zero division error:
         except ZeroDivisionError:
             message_box = QMessageBox()
@@ -293,7 +293,7 @@ class IntegralsWindow(QDialog):
             message_box = QMessageBox()
             message_box.setWindowTitle("ERROR")
             message_box.setText(
-                f"ERROR \n f(x) = {re.sub('sp.','', func)} \n {func}")
+                f"ERROR \n f(x) = {re.sub('sp.', '', func)} \n {func}")
             message_box.exec()
             print(print(e))
 
@@ -305,11 +305,12 @@ class IntegralsWindow(QDialog):
     def __calc_definite_integrals(self, func: str, lim1: Union[float, int], lim2: Union[float, int]) -> None:
         try:
 
-            res = 0 # If lims are equal - we do not need to evaluate.
+            res = 0  # If lims are equal - we do not need to evaluate.
             # We need to evaluate:
             if lim1 != lim2:
                 # Creating lambda function:
-                def f(x): return eval(func)
+                def f(x):
+                    return eval(func)
 
                 # We have symmetry in lim:
                 if lim1 == -lim2:
@@ -423,10 +424,9 @@ class IntegralsWindow(QDialog):
                 message_box.setText("Not able to find solution")
                 message_box.exec()
                 return
-            message_box = QMessageBox()
-            message_box.setWindowTitle("SOLUTION")
-            message_box.setText(f"Integral of your function:\n{res}")
-            message_box.exec()
+            func = substitute_sympy_representation(func)
+            func = re.sub('sp.', '', func)
+            self.__results_window(f"∫ {func} dx = {res}")
         except ZeroDivisionError:
             message_box = QMessageBox()
             message_box.setWindowTitle("ERROR")
@@ -458,6 +458,11 @@ class IntegralsWindow(QDialog):
             # Clearing the input:
             for line_edit in self.input_fields:
                 line_edit.setText("")
+
+    # Helper function for displaying results using separate window:
+    def __results_window(self, res: str) -> None:
+        self.__results = IntegralsResultWindow(res)
+        self.__results.show()
 
 
 # Class for custom line edit with keyboard filtering
@@ -557,7 +562,8 @@ def substitute_sympy_representation(sympy_repr: str) -> str:
 
 def func_bad_chars(expression: str) -> List[str]:
     result = re.findall(
-        r'(?!(?:sin|arcsin|cos|arccos|tg|arctg|ctg|arctg|sqrt|log|e\^|\d+|[\(\)\+\-\*\/\^]|\dx|x|π))\b\S+\b', expression)
+        r'(?!(?:sin|arcsin|cos|arccos|tg|arctg|ctg|arctg|sqrt|log|e\^|\d+|[\(\)\+\-\*\/\^]|\dx|x|π))\b\S+\b',
+        expression)
     return result
 
 
@@ -567,7 +573,6 @@ def lim_bad_chars(expression: str) -> List[str]:
 
 
 def convert_lim_math(expression: str) -> str:
-
     # Change 'lx' to 'l*x'
     expression = re.sub(r'(\w)(x)', r'\1*\2', expression)
 
@@ -593,7 +598,6 @@ def convert_lim_math(expression: str) -> str:
 
 
 def convert_func_math(expression: str) -> str:
-
     # Change 'e^x' to 'sp.exp(x)'
     expression = re.sub(r'e\^(.*)', r'sp.exp(\1)', expression)
 
