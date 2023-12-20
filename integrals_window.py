@@ -2,6 +2,7 @@ import sympy as sp
 import numpy as np
 import re
 import warnings
+from integ_help_window import IntegralsHelpWindow
 from typing import Union, List
 from scipy.integrate import quad, IntegrationWarning
 from sympy.calculus.singularities import singularities
@@ -108,6 +109,12 @@ class IntegralsWindow(QDialog):
 
         main_layout.addWidget(back_button, alignment=Qt.AlignmentFlag.AlignCenter)
 
+        # Button for help window:
+        help_button = QPushButton('Help')
+        help_button.clicked.connect(self.__help_window)
+
+        main_layout.addWidget(help_button, alignment=Qt.AlignmentFlag.AlignRight)
+
         # Setting main_layout as dialog layout:
         self.setLayout(main_layout)
 
@@ -178,6 +185,11 @@ class IntegralsWindow(QDialog):
     def __back_to_menu(self) -> None:
         self.close()
         self.parent.show()
+
+    # Function for displaying help window:
+    def __help_window(self) -> None:
+        self.__help_window = IntegralsHelpWindow()
+        self.__help_window.show()
 
     # Getting inputs to calculate:
     def __calc(self) -> None:
