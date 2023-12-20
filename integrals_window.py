@@ -405,7 +405,7 @@ class IntegralsWindow(QDialog):
                         else:
                             # Substituting representation so that functions match keyboard names:
                             res = substitute_sympy_representation(res)
-            if res == sp.nan:
+            if res == "nan" or res == sp.nan:
                 message_box = QMessageBox()
                 message_box.setWindowTitle("NOT ABLE TO SOLVE")
                 message_box.setText("Not able to find solution")
