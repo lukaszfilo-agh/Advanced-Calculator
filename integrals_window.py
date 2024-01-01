@@ -6,9 +6,6 @@ from integrals_help_window import IntegralsHelpWindow
 from integrals_result_window import IntegralsResultWindow
 from typing import Union, List, Optional
 from scipy.integrate import quad, IntegrationWarning
-from sympy.calculus.singularities import singularities
-from sympy.calculus.util import continuous_domain
-from sympy import Interval
 from PyQt6.QtCore import Qt, QEvent
 from PyQt6.QtWidgets import (
     QPushButton,
