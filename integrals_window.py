@@ -4,7 +4,7 @@ import re
 import warnings
 from integrals_help_window import IntegralsHelpWindow
 from integrals_result_window import IntegralsResultWindow
-from typing import Union, List
+from typing import Union, List, Optional
 from scipy.integrate import quad, IntegrationWarning
 from sympy.calculus.singularities import singularities
 from sympy.calculus.util import continuous_domain
@@ -301,22 +301,41 @@ class IntegralsWindow(QDialog):
             for line_edit in self.input_fields:
                 line_edit.setText("")
 
+    # Helper for calculating definite integrals using Sympy:
+    def __calc_using_sympy(self, lim1: float, lim2: float, func: str) -> Optional[str]:
+        x = sp.Symbol('x', real=True)
+
+        res = str(sp.integrate(func, (x, lim1, lim2)))
+
+        # No result found:
+        if res[0] in ["⌠", "I"]:
+            message_box = QMessageBox()
+            message_box.setWindowTitle("NOT ABLE TO SOLVE")
+            message_box.setText("Not able to find solution")
+            message_box.exec()
+            return None
+        else:
+            # Substituting representation so that functions match keyboard names:
+            res = substitute_sympy_representation(res)
+        return res
+
     # Calcualting definite integrals:
     def __calc_definite_integrals(self, func: str, lim1: Union[float, int], lim2: Union[float, int]) -> None:
         try:
 
             res = 0  # If lims are equal - we do not need to evaluate.
+
+            # Creating lambda function:
+            def f(x):
+                return eval(func)
+
+            # Symbolic variable:
+            x = sp.symbols('x', real=True)
+
             # We need to evaluate:
             if lim1 != lim2:
-                # Creating lambda function:
-                def f(x):
-                    return eval(func)
-
                 # We have symmetry in lim:
                 if lim1 == -lim2:
-                    # Symbolic variable:
-                    x = sp.symbols('x', real=True)
-
                     # Evaluating function using sympy:
                     func_sympy = eval(func)
 
@@ -334,99 +353,67 @@ class IntegralsWindow(QDialog):
                         sign = 1
                         if lim2 < lim1:
                             sign *= -1
-
-                        # Find function singularities:
-                        sing = singularities(func_sympy, x)
-
-                        # Getting domain of our function:
-                        domain = continuous_domain(func_sympy, x, sp.Reals)
-
-                        # If we have singularities or integral interval is not in function continuous domain:
-                        if sing or not domain.intersect(Interval(0, lim2)) == Interval(0, lim2):
-                            # Try using sympy.integrate:
-                            res = str(2 * sign * sp.integrate(func_sympy, (x, 0, lim)))
-
-                            # No result found:
-                            if res[0] in ["⌠", "I"]:
-                                message_box = QMessageBox()
-                                message_box.setWindowTitle("NOT ABLE TO SOLVE")
-                                message_box.setText("Not able to find solution")
-                                message_box.exec()
-                                return
-                            else:
-                                # Substituting representation so that functions match keyboard names:
-                                res = substitute_sympy_representation(res)
-                        # Else - use scipy:
-                        else:
-                            res, _ = quad(f, 0, lim2)
+                        # Check for Value and Type errors - solution may be complex (use Sympy):
+                        try:
+                            # Evaluate using quad:
+                            res, _ = quad(f, 0, lim)
                             res *= 2 * sign
-                    else:
-                        # Symbolic variable:
-                        x = sp.symbols('x', real=True)
 
+                        except (TypeError, ValueError):
+                            # Calculating symbolically:
+                            res = self.__calc_using_sympy(0, lim, func_sympy)
+
+                            # If we get None - sympy didn't manage to come up with solution then we finish calculations:
+                            if res is None:
+                                return
+                            res *= 2 * sign
+
+                    else:
                         # Evaluating function using sympy:
                         func_sympy = eval(func)
 
-                        # Getting domain of our function:
-                        domain = continuous_domain(func_sympy, x, sp.Reals)
-
-                        # Integral interval is in function continous domain - we may use scipy (no complex):
-                        if domain.intersect(Interval(lim1, lim2)) == Interval(lim1, lim2):
+                        # Check for Type and Value errors - there may be a complex solution:
+                        try:
                             # Calculating numerically:
                             res, _ = quad(f, lim1, lim2)
 
-                        # Use sympy to calculate result - complex solution:
-                        else:
-                            res = str(sp.integrate(func_sympy, (x, lim1, lim2)))
+                        except (TypeError, ValueError):
+                            # Calculating symbolically:
+                            res = self.__calc_using_sympy(lim1, lim2, func_sympy)
 
-                            # No result found:
-                            if res[0] in ["⌠", "I"]:
-                                message_box = QMessageBox()
-                                message_box.setWindowTitle("NOT ABLE TO SOLVE")
-                                message_box.setText("Not able to find solution")
-                                message_box.exec()
+                            # If we get None - sympy didn't manage to come up with solution then we finish calculations:
+                            if res is None:
                                 return
-                            else:
-                                # Substituting representation so that functions match keyboard names:
-                                res = substitute_sympy_representation(res)
-                else:
-                    # Symbolic variable:
-                    x = sp.symbols('x', real=True)
 
+                else:
                     # Evaluating function using sympy:
                     func_sympy = eval(func)
 
-                    # Get function continuous domain:
-                    domain = continuous_domain(func_sympy, x, sp.Reals)
-
-                    # Integral interval is in function continous domain - we may use scipy (no complex):
-                    if domain.intersect(Interval(lim1, lim2)) == Interval(lim1, lim2):
+                    # Check for Type and Value errors - there may be a complex solution:
+                    try:
                         # Calculating numerically:
                         res, _ = quad(f, lim1, lim2)
 
-                    # Use sympy to calculate result - complex solution:
-                    else:
-                        res = str(sp.integrate(func_sympy, (x, lim1, lim2)))
+                    except (TypeError, ValueError):
+                        # Calculating symbolically:
+                        res = self.__calc_using_sympy(lim1, lim2, func_sympy)
 
-                        # No result found:
-                        if res[0] in ["⌠", "I"]:
-                            message_box = QMessageBox()
-                            message_box.setWindowTitle("NOT ABLE TO SOLVE")
-                            message_box.setText("Not able to find solution")
-                            message_box.exec()
+                        # If we get None - sympy didn't manage to come up with solution then we finish calculations:
+                        if res is None:
                             return
-                        else:
-                            # Substituting representation so that functions match keyboard names:
-                            res = substitute_sympy_representation(res)
             if res == "nan" or res == sp.nan:
                 message_box = QMessageBox()
                 message_box.setWindowTitle("NOT ABLE TO SOLVE")
                 message_box.setText("Not able to find solution")
                 message_box.exec()
                 return
+
+            # Substituting sympy representation (if needed):
             func = substitute_sympy_representation(func)
             func = re.sub('sp.', '', func)
-            self.__results_window(f"∫ {func} dx = {res}")
+
+            self.__results_window(f"∫[{lim1, lim2}] {func} dx = {res}")
+
         except ZeroDivisionError:
             message_box = QMessageBox()
             message_box.setWindowTitle("ERROR")
@@ -436,16 +423,6 @@ class IntegralsWindow(QDialog):
             message_box = QMessageBox()
             message_box.setWindowTitle("SOLUTION")
             message_box.setText(f"Integral is not divergent")
-            message_box.exec()
-        except ValueError:
-            message_box = QMessageBox()
-            message_box.setWindowTitle("ERROR")
-            message_box.setText(f"Domain error")
-            message_box.exec()
-        except TypeError:
-            message_box = QMessageBox()
-            message_box.setWindowTitle("ERROR")
-            message_box.setText(f"Complex domain results are not supported.")
             message_box.exec()
         except Exception as e:
             print('different exception')
@@ -550,8 +527,8 @@ def substitute_sympy_representation(sympy_repr: str) -> str:
             sympy_repr = regex.sub(sub_with_brackets, sympy_repr)
 
     # Creating variables for easier symbols substitutions:
-    symbols_to_sub = ["pi", "E", "**"]
-    subs = ["π", "e", "^"]
+    symbols_to_sub = ["pi", "E", "**", "I"]
+    subs = ["π", "e", "^", "j"]
     match_symbols_to_subs = {symbol: sub for symbol, sub in zip(symbols_to_sub, subs)}
     for symbol in symbols_to_sub:
         if symbol in sympy_repr:
