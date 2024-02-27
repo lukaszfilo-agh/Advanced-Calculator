@@ -2,6 +2,7 @@
 Advanced calculator project with FD
 
 ### Features
-- [x] Simple calculator
+- [x] Advanced calculator
 - [x] Plot drawing
-- [ ] Matrix operations
+- [X] Matrix operations
+- [X] Integrals calculations 
