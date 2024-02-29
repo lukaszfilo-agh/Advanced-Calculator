@@ -12,20 +12,9 @@ from PyQt6.QtWidgets import (
     QMessageBox
 )
 from PyQt6.QtCore import Qt, QEvent
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_qtagg import (
-    FigureCanvasQTAgg as FigureCanvas
-)
+import matplotlib
 
 matplotlib.use('QtAgg')
-
-
-class MplCanvas(FigureCanvas):
-    # Class for widged plot display
-    def __init__(self, parent=None, width=11, height=4, dpi=100) -> None:
-        fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = fig.add_subplot(111)
-        super(MplCanvas, self).__init__(fig)
 
 
 class PlotInputDialog(QDialog):
@@ -39,7 +28,7 @@ class PlotInputDialog(QDialog):
         # Setting window title
         self.setWindowTitle('Enter Data')
         # Setting window size
-        self.resize(500, 800)
+        self.resize(500, 500)
 
         # Creating main layout
         main_layout = QVBoxLayout()
@@ -50,8 +39,6 @@ class PlotInputDialog(QDialog):
             CustomLineEdit(),  # Lower limit input
             CustomLineEdit()   # Upper limit input
         ]
-
-        self.input_fields[0].textChanged.connect(self.update_func)
 
         # Input fields labels
         labels_text = ['f(x):', 'Lower limit:', 'Upper limit:']
@@ -71,15 +58,6 @@ class PlotInputDialog(QDialog):
             label = QLabel(labels_text[i])
             main_layout.addWidget(label)
             main_layout.addWidget(self.input_fields[i])
-
-        self.func_canvas = MplCanvas(self, width=4, height=2, dpi=100)
-        self.func_canvas.axes.clear()
-        self.func_canvas.axes.text(0.2, 0.6, '', fontsize=50)
-
-        self.func_canvas.axes.get_xaxis().set_visible(False)
-        self.func_canvas.axes.get_yaxis().set_visible(False)
-        self.func_canvas.draw()
-        main_layout.addWidget(self.func_canvas)
 
         # Layout for keyboard buttons
         self.buttons_layout = QVBoxLayout()
